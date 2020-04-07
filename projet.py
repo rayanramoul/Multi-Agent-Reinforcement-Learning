@@ -12,9 +12,13 @@ class Agent:
         self.grid_width = grid_width
         self.grid_length = grid_length
     def choose(self):
-        direction = random.choice(["up", "down", "left", "right", "nothing"])
-        self.move(direction)
-    
+        # Set the percent you want to explore
+        epsilon = 0.2
+        if random.uniform(0, 1) < epsilon:
+            direction = random.choice(["up", "down", "left", "right", "nothing"])
+            self.move(direction)
+        else:
+            pass
     def place(self, x, y):
         self.posx = x
         self.posy = y
@@ -48,11 +52,9 @@ class RL:
         self.agents.append(ag)
 
     def get_grid(self):
-        grid = np.zeros((self.grid_width, self.grid_length))
+        grid = np.zeros((self.grid_width+1, self.grid_length+1))
         for i in self.agents:
-            if i.type == "hunter":
-                grid[i.posx, i.posy] = 2
-            else:
+            if i.type == "prey":
                 grid[i.posx, i.posy] = 1
         return grid
     
@@ -61,7 +63,8 @@ class RL:
         state = [posx, posy]
         for x in range(posx-radius, posx+radius):
             for y in range(posy-radius, posy+radius):
-                state.append(grid[x, y])
+                if x>0 and y>0 and x<self.grid_width and y<self.grid_length:
+                    state.append(grid[x, y])
                 
         print("State : "+str(state))
         return state
@@ -80,12 +83,11 @@ class RL:
         preys_coord = []
         for i in self.agents:
             if i.type == "prey":
-                #print(" i :"+str(self.agents.index(i))+" "+str(i.type)+" coord :"+str(i.posx)+" / "+str(i.posy))
-                state = self.get_state(i.posx, i.posy)
                 preys_coord.append((i.posx, i.posy))
-        #print("Preys coord : "+str(preys_coord))
+
         for i in self.agents:
             if i.type == "hunter" and (i.posx, i.posy) in preys_coord:
+                state = self.get_state(i.posx, i.posy)
                 return True
         return False
     
