@@ -11,7 +11,12 @@ class Agent:
         self.type = typer
         self.grid_width = grid_width
         self.grid_length = grid_length
-    def choose(self):
+        
+        self.rewards = []
+        self.actions = []
+        self.states = []
+        
+    def choose(self, state):
         # Set the percent you want to explore
         epsilon = 0.2
         if random.uniform(0, 1) < epsilon:
@@ -19,13 +24,20 @@ class Agent:
             self.move(direction)
         else:
             pass
+        self.actions.append(direction)
+        self.states.append(state)
+        
     def place(self, x, y):
         self.posx = x
         self.posy = y
         
-    def update(self, state, action, new_state, reward):
-        self.Q[state, action] = Q[state, action] + self.lr * (reward + self.gamma * np.max(Q[new_state, :]) - Q[state, action])
-
+    def update(self, state, action, new_state):
+        for rew in self.rewards:
+            self.Q[state, action] = Q[state, action] + self.lr * (reward + self.gamma * np.max(Q[new_state, :]) - Q[state, action])
+        self.rewards = []
+        self.actions = []
+        self.states = []
+        
     def move(self, direction):
         if direction == "up" and self.posy<self.grid_length:
             self.posy += 1
@@ -74,10 +86,13 @@ class RL:
         self.agents.append(ag)
     
     def episode(self):
-        for i in self.agents: 
-            i.choose()
-        if self.is_end_episode():
-            self.reinit()
+        while not self.is_end_episode():
+            for i in self.agents:
+                state = self.get_state(i.posx, i.posy) 
+                i.choose(state)
+            for i in self.agents:
+                self.reward(i)
+        self.reinit()
     
     def is_end_episode(self):
         preys_coord = []
@@ -87,14 +102,24 @@ class RL:
 
         for i in self.agents:
             if i.type == "hunter" and (i.posx, i.posy) in preys_coord:
-                state = self.get_state(i.posx, i.posy)
                 return True
         return False
+    
+    def reward(agent):
+        preys_coord = []
+        rew = -0.1
+        for i in self.agents:
+            if i.type == "prey":
+                preys_coord.append((i.posx, i.posy))
+        if (agent.posx, agent.posy) in preys_coord:
+                rew = 1
+        agent.rewards.append(rew)
     
     def reinit(self):
         print("Reinit ! ")
         for i in self.agents:
             i.place(np.random.randint(1, 10), np.random.randint(1, 10))
+
     def pprint(self):
         print(str(self.grid.representation))
 
