@@ -3,7 +3,7 @@ import random
 
 class Agent:
     def __init__(self, posx, posy, state_size, action_size, learning_rate, gamma, typer, grid_width, grid_length ,intelligent=False):
-        self.Q = np.zeros((state_size, action_size))
+        self.Q = {}
         self.posx = posx
         self.posy = posy
         self.lr = learning_rate
@@ -11,29 +11,64 @@ class Agent:
         self.type = typer
         self.grid_width = grid_width
         self.grid_length = grid_length
+        self.epsilon = 1
         
         self.rewards = []
         self.actions = []
         self.states = []
+        self.steps = 0
         
     def choose(self, state):
         # Set the percent you want to explore
-        epsilon = 0.2
-        if random.uniform(0, 1) < epsilon:
+        self.steps += 1
+        if random.uniform(0, 1) < self.epsilon:
             direction = random.choice(["up", "down", "left", "right", "nothing"])
             self.move(direction)
         else:
-            pass
+            try:
+                direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
+            except KeyError:
+                self.Q[str(state)] = {}
+                self.Q[str(state)]['up'] = 0
+                self.Q[str(state)]['down'] = 0
+                self.Q[str(state)]['left'] = 0
+                self.Q[str(state)]['right'] = 0
+                self.Q[str(state)]['nothing'] = 0
+                direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
+                
         self.actions.append(direction)
         self.states.append(state)
         
     def place(self, x, y):
+        #print("Q-Table : \n"+str(self.Q))
         self.posx = x
         self.posy = y
+        self.epsilon -= 0.001
+        self.steps = 0
         
-    def update(self, state, action, new_state):
-        for rew in self.rewards:
-            self.Q[state, action] = Q[state, action] + self.lr * (reward + self.gamma * np.max(Q[new_state, :]) - Q[state, action])
+    def optimal_future_value(self):
+        maxes = []
+        for i in self.Q:
+            maximum = max(self.Q[i], key=self.Q[i].get)  # Just use 'min' instead of 'max' for minimum.
+            maxes.append(self.Q[i][maximum])
+        return max(maxes)
+    
+    def update(self):
+        #print("states len "+str(len(self.states)))
+        #print("rewards len "+str(len(self.rewards)))
+        #print("actions len "+str(len(self.actions)))
+        for i in range(len(self.rewards)):
+            try:
+                self.Q[str(self.states[i])][self.actions[i]] = self.Q[str(self.states[i])][self.actions[i]] + self.lr * (self.rewards[i] + self.gamma * self.optimal_future_value() - self.Q[str(self.states[i])][self.actions[i]])
+            except KeyError:
+                self.Q[str(self.states[i])] = {}
+                self.Q[str(self.states[i])]['up'] = 0
+                self.Q[str(self.states[i])]['down'] = 0
+                self.Q[str(self.states[i])]['left'] = 0
+                self.Q[str(self.states[i])]['right'] = 0
+                self.Q[str(self.states[i])]['nothing'] = 0
+                self.Q[str(self.states[i])][self.actions[i]] = self.Q[str(self.states[i])][self.actions[i]] + self.lr * (self.rewards[i] + self.gamma * self.optimal_future_value() - self.Q[str(self.states[i])][self.actions[i]])
+
         self.rewards = []
         self.actions = []
         self.states = []
@@ -58,7 +93,7 @@ class RL:
         self.gamma = gamma
         self.grid_width = grid_width
         self.grid_length = grid_length
-        
+        self.episode_number = 1
     def add_hunter(self, posx, posy):
         ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "hunter", self.grid_width, self.grid_length, intelligent=True)
         self.agents.append(ag)
@@ -70,15 +105,15 @@ class RL:
                 grid[i.posx, i.posy] = 1
         return grid
     
-    def get_state(self, posx, posy, radius=2):
+    def get_state(self, posx, posy, radius=4):
         grid = self.get_grid()
-        state = [posx, posy]
+        state = []
         for x in range(posx-radius, posx+radius):
             for y in range(posy-radius, posy+radius):
                 if x>0 and y>0 and x<self.grid_width and y<self.grid_length:
                     state.append(grid[x, y])
                 
-        print("State : "+str(state))
+        #print("State : "+str(state))
         return state
     
     def add_prey(self, posx, posy):
@@ -86,13 +121,16 @@ class RL:
         self.agents.append(ag)
     
     def episode(self):
-        while not self.is_end_episode():
-            for i in self.agents:
-                state = self.get_state(i.posx, i.posy) 
-                i.choose(state)
-            for i in self.agents:
-                self.reward(i)
-        self.reinit()
+        for i in self.agents:
+            state = self.get_state(i.posx, i.posy) 
+            i.choose(state)
+        for i in self.agents:
+            self.reward(i)
+        if self.is_end_episode():
+            self.episode_number += 1
+            print("Episode "+str(self.episode_number))
+            self.reinit()
+        
     
     def is_end_episode(self):
         preys_coord = []
@@ -105,7 +143,7 @@ class RL:
                 return True
         return False
     
-    def reward(agent):
+    def reward(self, agent):
         preys_coord = []
         rew = -0.1
         for i in self.agents:
@@ -118,6 +156,7 @@ class RL:
     def reinit(self):
         print("Reinit ! ")
         for i in self.agents:
+            i.update()
             i.place(np.random.randint(1, 10), np.random.randint(1, 10))
 
     def pprint(self):

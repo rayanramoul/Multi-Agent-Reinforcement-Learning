@@ -11,7 +11,7 @@ to setup
   clear-all
   py:setup py:python3
   py:run "from  projet import *"
-  py:run "rl = RL(0.9, 0.7, 10, 10)"
+  py:run "rl = RL(0.8, 0.9, 10, 10)"
   set steps 0
   set iterations 1
   set reset false
@@ -73,7 +73,6 @@ to go
     set ycor y
   ]
 end
-
 
 
 
