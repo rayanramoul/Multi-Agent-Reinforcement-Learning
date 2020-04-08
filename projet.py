@@ -1,6 +1,10 @@
 import numpy as np
 import random
-
+def bool2int(x):
+    y = 0
+    for i,j in enumerate(x):
+        y += j<<i
+    return y
 class Agent:
     def __init__(self, posx, posy, state_size, action_size, learning_rate, gamma, typer, grid_width, grid_length ,intelligent=False, world_wraps=False):
         self.Q = {}
@@ -15,14 +19,22 @@ class Agent:
         if self.intelligent:
             self.lr = learning_rate
             self.gamma = gamma
-            self.epsilon = 0.7
+            self.epsilon = -1
             self.rewards = []
             self.actions = []
             self.states = []
             
         
-    def choose(self, state=False):
+    def choose(self, state=None):
         # Set the percent you want to explore
+        #if state is not None:
+        #    #state = int("".join(str(x) for x in state), 2)
+        #    state = bool2int(state)
+        if state is  not None:
+            state = np.array(state)
+        #    print(state)
+            state = str(np.argwhere(state>0))
+        #    print(state)
         self.steps += 1
         if not self.intelligent:
             direction = random.choice(["up", "down", "left", "right", "nothing"])
@@ -32,10 +44,10 @@ class Agent:
             direction = random.choice(["up", "down", "left", "right"])
             #self.move(direction)
         else:
-            try:
+            if str(state) in self.Q:
                 direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
                 #self.move(direction)
-            except KeyError:
+            else:
                 self.Q[str(state)] = {}
                 self.Q[str(state)]['up'] = 0
                 self.Q[str(state)]['down'] = 0
@@ -47,7 +59,9 @@ class Agent:
             #print("Epsilon : "+str(self.epsilon))      
             self.actions.append(direction)
             self.states.append(state)
+        #print("Direction :"+str(direction))
         return direction
+    
     def place(self, x, y):
         #print("Q-Table : \n"+str(self.Q))
         self.posx = x
@@ -133,13 +147,13 @@ class RL:
         self.agents.append(ag)
 
     def get_grid(self):
-        grid = np.zeros((self.grid_width+1, self.grid_length+1))
+        grid = np.zeros((self.grid_width+1, self.grid_length+1), dtype=np.uint64)
         for i in self.agents:
             if i.type == "prey":
                 grid[i.posx, i.posy] = 1
         return grid
     
-    def get_state(self, posx, posy, radius=3):
+    def get_state(self, posx, posy, radius=4):
         #print(" For position ("+str(posx)+", "+str(posy)+")")
         grid = self.get_grid()
         state = []
@@ -168,8 +182,8 @@ class RL:
                 choices.append(i.choose(state))
             else:
                 choices.append(i.choose())
-        for i in choices:
-            self.agents[choices.index(i)].move(i)
+        for i in self.agents:
+            i.move(choices[self.agents.index(i)])
         for i in self.agents:
             if i.type == "hunter":
                 self.reward(i)
