@@ -11,7 +11,7 @@ to setup
   clear-all
   py:setup py:python3
   py:run "from  projet import *"
-  py:run "rl = RL(0.8, 0.9, 10, 10)"
+  py:run "rl = RL(1, 0.9, 10, 10, world_wraps=True)"
 
   set-default-shape hunters "cat"
   set-default-shape preys "mouse side"
@@ -19,8 +19,6 @@ to setup
 
   set-current-plot "Steps by Episode"
 create-temporary-plot-pen ("Steps")
-
-
 
   ask patches [
   set pcolor black
@@ -77,8 +75,6 @@ to go
    plot steps
   ]
 end
-
-
 
 
 @#$#@#$#@

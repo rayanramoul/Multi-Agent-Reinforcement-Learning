@@ -2,8 +2,9 @@ import numpy as np
 import random
 
 class Agent:
-    def __init__(self, posx, posy, state_size, action_size, learning_rate, gamma, typer, grid_width, grid_length ,intelligent=False):
+    def __init__(self, posx, posy, state_size, action_size, learning_rate, gamma, typer, grid_width, grid_length ,intelligent=False, world_wraps=False):
         self.Q = {}
+        self.world_wraps = world_wraps
         self.posx = posx
         self.posy = posy
         self.type = typer
@@ -23,24 +24,30 @@ class Agent:
     def choose(self, state=False):
         # Set the percent you want to explore
         self.steps += 1
-        if not self.intelligent or random.uniform(0, 1) < self.epsilon:
+        if not self.intelligent:
             direction = random.choice(["up", "down", "left", "right", "nothing"])
-            self.move(direction)
+            #self.move(direction)
+            return direction
+        if random.uniform(0, 1) < self.epsilon:
+            direction = random.choice(["up", "down", "left", "right"])
+            #self.move(direction)
         else:
             try:
                 direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
+                #self.move(direction)
             except KeyError:
                 self.Q[str(state)] = {}
                 self.Q[str(state)]['up'] = 0
                 self.Q[str(state)]['down'] = 0
                 self.Q[str(state)]['left'] = 0
                 self.Q[str(state)]['right'] = 0
-                self.Q[str(state)]['nothing'] = 0
                 direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
-        if self.intelligent:        
+                #self.move(direction)
+        if self.intelligent:  
+            #print("Epsilon : "+str(self.epsilon))      
             self.actions.append(direction)
             self.states.append(state)
-        
+        return direction
     def place(self, x, y):
         #print("Q-Table : \n"+str(self.Q))
         self.posx = x
@@ -52,16 +59,15 @@ class Agent:
     def optimal_future_value(self, i):
         try:
             state = self.states[i]
-            maxes = []
             maximum = max(self.Q[state], key=self.Q[state].get)  # Just use 'min' instead of 'max' for minimum.
             return (self.Q[state][maximum])
         except:
             return 0
     
     def update(self):
-        #print("states len "+str(len(self.states)))
-        #print("rewards len "+str(len(self.rewards)))
-        #print("actions len "+str(len(self.actions)))
+        #print("states len "+str(self.states))
+        #print("rewards len "+str(self.rewards))
+        #print("actions len "+str(self.actions))
         for i in range(len(self.rewards)):
             #print("iteration : "+str(i))
             if str(self.states[i]) in self.Q:
@@ -80,18 +86,39 @@ class Agent:
         self.states = []
         
     def move(self, direction):
-        if direction == "up" and self.posy<self.grid_length:
-            self.posy += 1
-        elif direction == "down" and self.posy>0:
-            self.posy -= 1
-        elif direction == "left" and self.posx>0:
-            self.posx -= 1
-        elif direction == "right" and self.posx<self.grid_width:
-            self.posx += 1
+        if not self.world_wraps:
+            if direction == "up" and self.posy<self.grid_length:
+                self.posy += 1
+            elif direction == "down" and self.posy>0:
+                self.posy -= 1
+            elif direction == "left" and self.posx>0:
+                self.posx -= 1
+            elif direction == "right" and self.posx<self.grid_width:
+                self.posx += 1
+            else:
+                pass
         else:
-            pass
+            if direction == "up": #and self.posy<self.grid_length:
+                self.posy += 1
+                if self.posy>self.grid_length:
+                    self.posy = 0
+            elif direction == "down": #and self.posy>0:
+                self.posy -= 1
+                if self.posy<0:
+                    self.posy = self.grid_length
+            elif direction == "left": #and self.posx>0:
+                self.posx -= 1
+                if self.posx<0:
+                    self.posx = self.grid_width
+            elif direction == "right": #and self.posx<self.grid_width:
+                self.posx += 1
+                if self.posx>self.grid_width:
+                    self.posx = 0
+            else:
+                pass
 class RL:
-    def __init__(self, learning_rate, gamma, grid_width, grid_length):
+    def __init__(self, learning_rate, gamma, grid_width, grid_length, world_wraps = False):
+        self.world_wraps = world_wraps
         self.agents = []
         self.state_size = 50
         self.action_size = 4
@@ -102,7 +129,7 @@ class RL:
         self.episode_number = 1
         self.steps = 0
     def add_hunter(self, posx, posy):
-        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "hunter", self.grid_width, self.grid_length, intelligent=True)
+        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "hunter", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps)
         self.agents.append(ag)
 
     def get_grid(self):
@@ -112,39 +139,46 @@ class RL:
                 grid[i.posx, i.posy] = 1
         return grid
     
-    def get_state(self, posx, posy, radius=4):
+    def get_state(self, posx, posy, radius=3):
         #print(" For position ("+str(posx)+", "+str(posy)+")")
         grid = self.get_grid()
         state = []
         for x in range(posx-radius, posx+radius+1):
             for y in range(posy-radius, posy+radius+1):
-                if x>=0 and y>=0 and x<self.grid_width+1 and y<self.grid_length+1:
-                    #print("("+str(x)+", "+str(y)+") : "+str(grid[x, y]))
-                    state.append(grid[x, y])
+                if not self.world_wraps:
+                    if x>=0 and y>=0 and x<self.grid_width+1 and y<self.grid_length+1:
+                        #print("("+str(x)+", "+str(y)+") : "+str(grid[x, y]))
+                        state.append(grid[x, y])
+                else:
+                    #print("("+str(x%(self.grid_width+1))+", "+str(y%(self.grid_length+1))+") : "+str(grid[x%(self.grid_width+1), y%(self.grid_length+1)]))
+                    state.append(grid[x%(self.grid_width+1), y%(self.grid_length+1)])
                 
         #print("State : "+str(state))
         return state
     
     def add_prey(self, posx, posy):
-        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "prey", self.grid_width, self.grid_length)
+        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "prey", self.grid_width, self.grid_length, world_wraps=self.world_wraps)
         self.agents.append(ag)
     
     def episode(self):
+        choices = []
         for i in self.agents:
             if i.type == "hunter":
                 state = self.get_state(i.posx, i.posy) 
-                i.choose(state)
+                choices.append(i.choose(state))
             else:
-                i.choose()
+                choices.append(i.choose())
+        for i in choices:
+            self.agents[choices.index(i)].move(i)
         for i in self.agents:
             if i.type == "hunter":
                 self.reward(i)
         if self.is_end_episode():
             self.episode_number += 1
-            print("Episode "+str(self.episode_number))
+            #print("Episode "+str(self.episode_number))
             self.reinit()
             r = self.steps 
-            print(" Steps : "+str(r))
+            #print(" Steps : "+str(r))
             self.steps = 0
             return r
         self.steps += 1
