@@ -5,21 +5,22 @@ breed [scouts scout]
 breed [observators observator]
 observators-own [reward-list]
 hunters-own [reward-list]
-globals  [reset iterations steps]
+
 
 to setup
   clear-all
   py:setup py:python3
   py:run "from  projet import *"
   py:run "rl = RL(0.8, 0.9, 10, 10)"
-  set steps 0
-  set iterations 1
-  set reset false
+
   set-default-shape hunters "cat"
   set-default-shape preys "mouse side"
   set-default-shape scouts "butterfly"
 
   set-current-plot "Steps by Episode"
+create-temporary-plot-pen ("Steps")
+
+
 
   ask patches [
   set pcolor black
@@ -46,7 +47,6 @@ to setup
   set xcor random max-pxcor
     set ycor random max-pycor
         py:set "xcor" xcor
-
     set size 1
     set color random 100
   create-links-to hunters
@@ -64,7 +64,7 @@ to setup
 end
 
 to go
-  py:run "rl.episode()"
+  let steps py:runresult "rl.episode()"
   ask turtles [
   py:set "id" who
     let x py:runresult "rl.agents[id].posx"
@@ -72,8 +72,11 @@ to go
     set xcor x
     set ycor y
   ]
-end
 
+  if ( steps > 0 ) [
+   plot steps
+  ]
+end
 
 
 
@@ -302,6 +305,23 @@ share-q-table
 1
 1
 -1000
+
+BUTTON
+158
+359
+274
+392
+go-iteration
+go
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
