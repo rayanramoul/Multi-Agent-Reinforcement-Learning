@@ -1,10 +1,14 @@
 import numpy as np
 import random
-def bool2int(x):
-    y = 0
-    for i,j in enumerate(x):
-        y += j<<i
-    return y
+def transform(state):
+    state = np.array(state)
+    #print("im here")
+    #print(state)
+    x = np.argwhere(state>0)
+    try:
+        return str(x[0][0])
+    except:
+        return str(0)
 class Agent:
     def __init__(self, posx, posy, state_size, action_size, learning_rate, gamma, typer, grid_width, grid_length ,intelligent=False, world_wraps=False):
         self.Q = {}
@@ -26,11 +30,7 @@ class Agent:
             
         
     def choose(self, state=None):
-        if state is  not None:
-            state = np.array(state)
-        #    print(state)
-            state = str(np.argwhere(state>0))
-        #    print(state)
+        #print("state received : "+str(state))
         self.steps += 1
         if not self.intelligent:
             direction = random.choice(["up", "down", "left", "right", "nothing"])
@@ -42,6 +42,7 @@ class Agent:
         else:
             if str(state) in self.Q:
                 direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
+                #print(str(self.Q[str(state)]))
                 #self.move(direction)
             else:
                 self.Q[str(state)] = {}
@@ -90,12 +91,13 @@ class Agent:
                 self.Q[str(self.states[i])]['right'] = 0
                 self.Q[str(self.states[i])]['nothing'] = 0
                 self.Q[str(self.states[i])][self.actions[i]] = self.Q[str(self.states[i])][self.actions[i]] + self.lr * (self.rewards[i] + self.gamma * self.optimal_future_value(i+1) - self.Q[str(self.states[i])][self.actions[i]])
-        #print("Q-Table\n"+str(self.Q))
+        
         self.rewards = []
         self.actions = []
         self.states = []
         
     def move(self, direction):
+        #print("Q-Table\n"+str(self.Q))
         if not self.world_wraps:
             if direction == "up" and self.posy<self.grid_length:
                 self.posy += 1
@@ -139,10 +141,20 @@ class RL:
         self.grid_length = grid_length
         self.episode_number = 1
         self.steps = 0
+        self.scouts = 0
     def add_hunter(self, posx, posy):
         ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "hunter", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps)
         self.agents.append(ag)
 
+    def add_scout(self, posx, posy):
+        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "scout", self.grid_width, self.grid_length, intelligent=False, world_wraps=self.world_wraps)
+        self.agents.append(ag)
+        self.scouts += 1
+        
+    def add_prey(self, posx, posy):
+        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "prey", self.grid_width, self.grid_length, world_wraps=self.world_wraps)
+        self.agents.append(ag)
+        
     def get_grid(self):
         grid = np.zeros((self.grid_width+1, self.grid_length+1), dtype=np.uint64)
         for i in self.agents:
@@ -166,16 +178,16 @@ class RL:
                 
         #print("State : "+str(state))
         return state
-    
-    def add_prey(self, posx, posy):
-        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "prey", self.grid_width, self.grid_length, world_wraps=self.world_wraps)
-        self.agents.append(ag)
-    
+
     def episode(self):
         choices = []
         for i in self.agents:
             if i.intelligent:
-                state = self.get_state(i.posx, i.posy) 
+                state = transform(self.get_state(i.posx, i.posy)) 
+                if self.scouts>0:
+                    for j in self.agents:
+                        if j.type == "scout":
+                            state = [state, transform(self.get_state(j.posx, j.posy)), i.posx-j.posx, i.posy-j.posy] 
                 choices.append(i.choose(state))
             else:
                 choices.append(i.choose())

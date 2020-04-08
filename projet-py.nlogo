@@ -48,7 +48,9 @@ to setup
   [
   set xcor random max-pxcor
     set ycor random max-pycor
-        py:set "xcor" xcor
+          py:set "xcor" xcor
+    py:set "ycor" ycor
+    py:run "rl.add_scout( xcor, ycor)"
     set size 1
     set color random 100
   create-links-to hunters
@@ -79,8 +81,6 @@ to go
    plot steps
   ]
 end
-
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 444
@@ -199,7 +199,7 @@ radius-hunters
 radius-hunters
 1
 10
-4.0
+2.0
 1
 1
 NIL
@@ -214,7 +214,7 @@ number-scouts
 number-scouts
 0
 10
-0.0
+1.0
 1
 1
 NIL
