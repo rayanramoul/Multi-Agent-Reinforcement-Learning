@@ -26,10 +26,6 @@ class Agent:
             
         
     def choose(self, state=None):
-        # Set the percent you want to explore
-        #if state is not None:
-        #    #state = int("".join(str(x) for x in state), 2)
-        #    state = bool2int(state)
         if state is  not None:
             state = np.array(state)
         #    print(state)
@@ -178,7 +174,7 @@ class RL:
     def episode(self):
         choices = []
         for i in self.agents:
-            if i.type == "hunter":
+            if i.intelligent:
                 state = self.get_state(i.posx, i.posy) 
                 choices.append(i.choose(state))
             else:
@@ -186,7 +182,7 @@ class RL:
         for i in self.agents:
             i.move(choices[self.agents.index(i)])
         for i in self.agents:
-            if i.type == "hunter":
+            if i.intelligent:
                 self.reward(i)
         if self.is_end_episode():
             self.episode_number += 1
@@ -224,7 +220,7 @@ class RL:
     def reinit(self):
         #print("Reinit ! ")
         for i in self.agents:
-            if i.type == "hunter":
+            if i.intelligent:
                 i.update()
             i.place(np.random.randint(1, 10), np.random.randint(1, 10))
 

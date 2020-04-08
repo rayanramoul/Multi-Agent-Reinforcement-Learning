@@ -12,14 +12,17 @@ to setup
   py:setup py:python3
   py:run "from  projet import *"
   py:set "radius_hunter" radius-hunters
-  py:run "rl = RL(1, 0.9, 10, 10, radius=radius_hunter ,world_wraps=True)"
+  py:set "learning_rate" learning-rate
+  py:set "gamma" gamma
+   py:run "rl = RL(learning_rate, gamma, 10, 10, radius=radius_hunter ,world_wraps=True)"
+;  py:run "rl = RL(1, 0.9, 10, 10, radius=radius_hunter ,world_wraps=True)"
 
   set-default-shape hunters "cat"
   set-default-shape preys "mouse side"
   set-default-shape scouts "butterfly"
 
   set-current-plot "Steps by Episode"
-create-temporary-plot-pen ("Steps")
+  create-temporary-plot-pen ("Steps")
 
   ask patches [
   set pcolor black
@@ -240,8 +243,8 @@ SLIDER
 learning-rate
 learning-rate
 0.1
-1
-1.0
+10
+0.8
 0.1
 1
 NIL
@@ -252,8 +255,8 @@ SLIDER
 150
 397
 183
-discount-factor
-discount-factor
+gamma
+gamma
 0
 1
 0.75
