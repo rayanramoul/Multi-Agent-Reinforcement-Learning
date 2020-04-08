@@ -131,8 +131,9 @@ class Agent:
             else:
                 pass
 class RL:
-    def __init__(self, learning_rate, gamma, grid_width, grid_length, world_wraps = False):
+    def __init__(self, learning_rate, gamma, grid_width, grid_length, radius=4, world_wraps = False):
         self.world_wraps = world_wraps
+        self.radius = radius
         self.agents = []
         self.state_size = 50
         self.action_size = 4
@@ -153,12 +154,12 @@ class RL:
                 grid[i.posx, i.posy] = 1
         return grid
     
-    def get_state(self, posx, posy, radius=4):
+    def get_state(self, posx, posy):
         #print(" For position ("+str(posx)+", "+str(posy)+")")
         grid = self.get_grid()
         state = []
-        for x in range(posx-radius, posx+radius+1):
-            for y in range(posy-radius, posy+radius+1):
+        for x in range(posx-self.radius, posx+self.radius+1):
+            for y in range(posy-self.radius, posy+self.radius+1):
                 if not self.world_wraps:
                     if x>=0 and y>=0 and x<self.grid_width+1 and y<self.grid_length+1:
                         #print("("+str(x)+", "+str(y)+") : "+str(grid[x, y]))

@@ -11,7 +11,8 @@ to setup
   clear-all
   py:setup py:python3
   py:run "from  projet import *"
-  py:run "rl = RL(1, 0.9, 10, 10, world_wraps=True)"
+  py:set "radius_hunter" radius-hunters
+  py:run "rl = RL(1, 0.9, 10, 10, radius=radius_hunter ,world_wraps=True)"
 
   set-default-shape hunters "cat"
   set-default-shape preys "mouse side"
@@ -30,14 +31,14 @@ create-temporary-plot-pen ("Steps")
     set reward-list []
 
     create-temporary-plot-pen (word who)
-    set-plot-pen-color color
+    set-plot-pen-color blue
     set xcor random max-pxcor
     set ycor random max-pycor
     py:set "xcor" xcor
     py:set "ycor" ycor
     py:run "rl.add_hunter( xcor, ycor)"
     set size 1
-    set color random 100
+    set color random 50
   ]
 
   create-scouts number-scouts
@@ -57,7 +58,7 @@ create-temporary-plot-pen ("Steps")
        py:set "ycor" ycor
     py:run "rl.add_prey( xcor, ycor)"
     set size 1
-    set color random 100
+    set color blue
   ]
 end
 
