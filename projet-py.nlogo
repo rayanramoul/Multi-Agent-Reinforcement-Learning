@@ -14,7 +14,12 @@ to setup
   py:set "radius_hunter" radius-hunters
   py:set "learning_rate" learning-rate
   py:set "gamma" gamma
-   py:run "rl = RL(learning_rate, gamma, 10, 10, radius=radius_hunter ,world_wraps=True)"
+  py:set "share_q_table" share-q-table
+  py:set "mean_frequency" mean-frequency
+  py:set "number_to_catch" number-to-catch
+  py:set "epsilon" epsilon
+  py:set "decay_rate" decay-rate
+   py:run "rl = RL(learning_rate, gamma, 10, 10, radius=radius_hunter ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate)"
 ;  py:run "rl = RL(1, 0.9, 10, 10, radius=radius_hunter ,world_wraps=True)"
 
   set-default-shape hunters "cat"
@@ -118,7 +123,7 @@ number-hunters
 number-hunters
 1
 10
-1.0
+2.0
 1
 1
 NIL
@@ -199,7 +204,7 @@ radius-hunters
 radius-hunters
 1
 10
-2.0
+4.0
 1
 1
 NIL
@@ -214,7 +219,7 @@ number-scouts
 number-scouts
 0
 10
-1.0
+0.0
 1
 1
 NIL
@@ -292,6 +297,66 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+10
+204
+183
+237
+mean-frequency
+mean-frequency
+0
+500
+0.0
+10
+1
+NIL
+HORIZONTAL
+
+SLIDER
+220
+209
+392
+242
+number-to-catch
+number-to-catch
+1
+20
+2.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+18
+263
+190
+296
+epsilon
+epsilon
+0
+1
+0.0
+0.001
+1
+NIL
+HORIZONTAL
+
+SLIDER
+217
+268
+389
+301
+decay-rate
+decay-rate
+0
+1
+0.0
+0.001
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
