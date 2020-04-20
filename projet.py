@@ -11,6 +11,8 @@ def transform(state):
         return str(x[0][0])
     except:
         return str(0)
+    
+    
 def mean_tables(tables):
     all_keys = []
     results  = {}
@@ -53,7 +55,26 @@ class Agent:
             self.epsilon = epsilon
             self.decay_rate = decay_rate
             
+            self.actions_history = []
+            self.rewards_history = []
+            self.states_history = []
+
+    def pprint(self):
+        if self.type=="dead": return ""
+        ret = ""
+        ret += "Type = "+str(self.type)+" / Intelligent = "+str(self.intelligent)+"\n"
+        ret += "( X="+str(self.posx)+" / Y="+str(self.posy)+" )"+"\n"
+        ret += str(self.steps)+" steps."
+        if self.intelligent:
+            ret += "Learning Rate = "+str(self.lr)+" / Gamma  = "+str(self.gamma)+" / Decay Rate = "+str(self.decay_rate)+"\n"
+            ret += "History size = "+str(len(self.actions_history))+"\n"
+        ret += "\n"
+        
+        return ret
+
     def choose(self, state=None):
+        if self.type=="dead": return
+
         #print("state received : "+str(state))
         self.steps += 1
         if not self.intelligent:
@@ -84,6 +105,8 @@ class Agent:
         return direction
     
     def place(self, x, y):
+        if self.type=="dead": return
+
         #print("Q-Table : \n"+str(self.Q))
         self.posx = x
         self.posy = y
@@ -100,6 +123,8 @@ class Agent:
             return 0
     
     def update(self, Q=None):
+        if self.type=="dead": return
+
         #print("states len "+str(self.states))
         #print("rewards len "+str(self.rewards))
         #print("actions len "+str(self.actions))
@@ -117,20 +142,29 @@ class Agent:
                 self.Q[str(self.states[i])]['right'] = 0
                 self.Q[str(self.states[i])]['nothing'] = 0
                 self.Q[str(self.states[i])][self.actions[i]] = self.Q[str(self.states[i])][self.actions[i]] + self.lr * (self.rewards[i] + self.gamma * self.optimal_future_value(i+1) - self.Q[str(self.states[i])][self.actions[i]])
+        self.rewards_history.append(self.rewards)
+        self.states_history.append(self.states)
+        self.actions_history.append(self.actions)
         
         self.rewards = []
         self.actions = []
         self.states = []
         
     def replay_memory(self, states, rewards, actions):
+        if self.type=="dead": return
+
         for i in range(len(states)):
             self.actions = actions[i]
             self.states = states[i]
             self.rewards = rewards[i]
             self.update()
-        
+    
+    def get_memory(self):
+        if self.type=="dead": return
+        return [self.states_history, self.rewards_history, self.actions_history]
         
     def move(self, direction):
+        if self.type=="dead": return
         #print("Q-Table\n"+str(self.Q))
         if not self.world_wraps:
             if direction == "up" and self.posy<self.grid_length:
@@ -289,6 +323,23 @@ class RL:
                     i.update(self.Q)
             i.place(np.random.randint(1, 10), np.random.randint(1, 10))
 
-    def pprint(self):
-        print(str(self.grid.representation))
+    def pprint(self):    
+        ret = ""    
+        ret += "Episode "+str(self.episode_number)+"\n"
+        ret += "Sharing-Q-Table = "+str(self.sharing_q_table)+"\n"
+        ret += "Mean-Frequency =  "+str(self.mean_frequency)+"\n"
+        ret += "Number to catch = "+str(self.number_to_catch)+"\n\n"
 
+        for i in self.agents:
+            if i.type!="dead":
+                ret += "Agent "+str(self.agents.index(i))+"\n"
+                ret += i.pprint()
+                ret += "\n"
+        return ret
+    
+    def delete_agent(self, index):
+        self.agents[index].type = "dead"
+    
+    def teach(self, teacher, student):
+        mem = self.agents[int(teacher)].get_memory()
+        self.agents[int(student)].replay_memory(mem[0], mem[1], mem[2])

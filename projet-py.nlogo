@@ -46,7 +46,7 @@ to setup
     py:set "ycor" ycor
     py:run "rl.add_hunter( xcor, ycor)"
     set size 1
-    set color random 50
+    set color red
   ]
 
   create-scouts number-scouts
@@ -57,7 +57,7 @@ to setup
     py:set "ycor" ycor
     py:run "rl.add_scout( xcor, ycor)"
     set size 1
-    set color random 100
+    set color green
   create-links-to hunters
   ]
 
@@ -80,11 +80,46 @@ to go
     let y py:runresult "rl.agents[id].posy"
     set xcor x
     set ycor y
+    let pprint py:runresult "rl.pprint()"
+    clear-output
+    output-print pprint
   ]
 
   if ( steps > 0 ) [
+
    plot steps
   ]
+end
+
+
+to add-hunter
+
+    create-hunters 1
+  [
+
+    set reward-list []
+    set xcor random max-pxcor
+    set ycor random max-pycor
+    py:set "xcor" xcor
+    py:set "ycor" ycor
+    py:run "rl.add_hunter( xcor, ycor)"
+    set size 1
+    set color red
+  ]
+end
+
+to delete-agent
+    py:set "id" agent-id
+  py:run "rl.delete_agent(id)"
+  ask  turtle agent-id [ die ]
+end
+
+
+
+to teach
+      py:set "teacher" agent-teacher
+    py:set "student" agent-student
+  py:run "rl.teach(teacher, student)"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -123,7 +158,7 @@ number-hunters
 number-hunters
 1
 10
-2.0
+1.0
 1
 1
 NIL
@@ -322,7 +357,7 @@ number-to-catch
 number-to-catch
 1
 20
-2.0
+1.0
 1
 1
 NIL
@@ -331,7 +366,7 @@ HORIZONTAL
 SLIDER
 18
 263
-190
+423
 296
 epsilon
 epsilon
@@ -344,19 +379,110 @@ NIL
 HORIZONTAL
 
 SLIDER
-217
-268
-389
-301
+18
+314
+423
+347
 decay-rate
 decay-rate
 0
 1
-0.0
-0.001
+1.0E-5
+0.00001
 1
 NIL
 HORIZONTAL
+
+INPUTBOX
+11
+685
+214
+745
+agent-teacher
+0
+1
+0
+String
+
+INPUTBOX
+241
+689
+440
+749
+agent-student
+2
+1
+0
+String
+
+BUTTON
+101
+765
+174
+798
+teach
+teach
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+493
+698
+605
+731
+NIL
+add-hunter
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+OUTPUT
+1153
+29
+1709
+582
+12
+
+INPUTBOX
+764
+698
+1041
+758
+agent-id
+0.0
+1
+0
+Number
+
+BUTTON
+1079
+710
+1204
+743
+NIL
+delete-agent
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
