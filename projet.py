@@ -3,14 +3,35 @@ from collections import Counter
 import random
 
 def transform(state):
+    return state
     state = np.array(state)
-    #print("im here")
-    #print(state)
     x = np.argwhere(state>0)
     try:
         return str(x[0][0])
     except:
         return str(0)
+    
+def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scout, radius):
+    test = False
+    for i in state_hunter:
+        if 1 in i:
+            test = True
+    
+    if test:
+        return state_hunter
+    
+    mid = int(len(state_scout)/2)
+    x_rel = x_hunter - (x_scout - radius)
+    y_rel = y_hunter - (y_scout - radius)
+    
+    x_prey = -1
+    y_prey = -1
+    for i in state_scout:
+        if 1 in i:
+            x_prey = i.index(1)
+            y_prey = state_scout.index(i)
+    #print("Scouuut")
+    return [x_prey+x_rel, y_prey+y_rel]
     
     
 def mean_tables(tables):
@@ -19,7 +40,6 @@ def mean_tables(tables):
     for i in tables:
         all_keys += i.keys()
     all_keys = list(set(all_keys))
-    print("all keys : "+str(all_keys))
     for i in all_keys:
         results[i] = {}
         for j in ["up", "down", "left", "right"]:
@@ -74,8 +94,6 @@ class Agent:
 
     def choose(self, state=None):
         if self.type=="dead": return
-
-        #print("state received : "+str(state))
         self.steps += 1
         if not self.intelligent:
             direction = random.choice(["up", "down", "left", "right", "nothing"])
@@ -87,7 +105,6 @@ class Agent:
         else:
             if str(state) in self.Q:
                 direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
-                #print(str(self.Q[str(state)]))
                 #self.move(direction)
             else:
                 self.Q[str(state)] = {}
@@ -98,16 +115,13 @@ class Agent:
                 direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
                 #self.move(direction)
         if self.intelligent:  
-            #print("Epsilon : "+str(self.epsilon))      
             self.actions.append(direction)
             self.states.append(state)
-        #print("Direction :"+str(direction))
+
         return direction
     
     def place(self, x, y):
         if self.type=="dead": return
-
-        #print("Q-Table : \n"+str(self.Q))
         self.posx = x
         self.posy = y
         if self.intelligent:
@@ -125,13 +139,9 @@ class Agent:
     def update(self, Q=None):
         if self.type=="dead": return
 
-        #print("states len "+str(self.states))
-        #print("rewards len "+str(self.rewards))
-        #print("actions len "+str(self.actions))
         if Q!=None:
             self.Q = Q
         for i in range(len(self.rewards)):
-            #print("iteration : "+str(i))
             if str(self.states[i]) in self.Q:
                 self.Q[str(self.states[i])][self.actions[i]] = self.Q[str(self.states[i])][self.actions[i]] + self.lr * (self.rewards[i] + self.gamma * self.optimal_future_value(i+1) - self.Q[str(self.states[i])][self.actions[i]])
             else:
@@ -165,7 +175,6 @@ class Agent:
         
     def move(self, direction):
         if self.type=="dead": return
-        #print("Q-Table\n"+str(self.Q))
         if not self.world_wraps:
             if direction == "up" and self.posy<self.grid_length:
                 self.posy += 1
@@ -226,6 +235,10 @@ class RL:
         self.agents.append(ag)
         self.scouts += 1
         
+    def add_expert_hunter(self, posx, posy):
+        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "expert", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps, epsilon=self.epsilon, decay_rate=self.decay_rate)
+        self.agents.append(ag)
+    
     def add_prey(self, posx, posy):
         ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "prey", self.grid_width, self.grid_length, world_wraps=self.world_wraps)
         self.agents.append(ag)
@@ -238,19 +251,17 @@ class RL:
         return grid
     
     def get_state(self, posx, posy):
-        #print(" For position ("+str(posx)+", "+str(posy)+")")
         grid = self.get_grid()
         state = []
         for x in range(posx-self.radius, posx+self.radius+1):
+            ranger = []
             for y in range(posy-self.radius, posy+self.radius+1):
                 if not self.world_wraps:
                     if x>=0 and y>=0 and x<self.grid_width+1 and y<self.grid_length+1:
-                        #print("("+str(x)+", "+str(y)+") : "+str(grid[x, y]))
-                        state.append(grid[x, y])
+                        ranger.append(int(grid[x, y]))
                 else:
-                    #print("("+str(x%(self.grid_width+1))+", "+str(y%(self.grid_length+1))+") : "+str(grid[x%(self.grid_width+1), y%(self.grid_length+1)]))
-                    state.append(grid[x%(self.grid_width+1), y%(self.grid_length+1)])
-                
+                    ranger.append(int(grid[x%(self.grid_width+1), y%(self.grid_length+1)]))
+            state.append(ranger)
         #print("State : "+str(state))
         return state
 
@@ -262,7 +273,8 @@ class RL:
                 if self.scouts>0:
                     for j in self.agents:
                         if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
-                            state = [state, transform(self.get_state(j.posx, j.posy)), i.posx-j.posx, i.posy-j.posy] 
+                            state = get_the_state(state, self.get_state(j.posx, j.posy), i.posx, j.posx, i.posy, j.posy, self.radius)
+                            
                 choices.append(i.choose(state))
             else:
                 choices.append(i.choose())
@@ -273,13 +285,12 @@ class RL:
                 self.reward(i)
         if self.is_end_episode():
             self.episode_number += 1
-            print("Episode "+str(self.episode_number))
+
             self.reinit()
             r = self.steps 
-            #print(" Steps : "+str(r))
             if self.mean_frequency>0: # IF THERE IS A FREQUENCY OF SYNCHRONIZATION
                 if self.episode_number%self.mean_frequency == 0:
-                    qss = []        #print("Reinit ! ")
+                    qss = [] 
                     result  = mean_tables(qss)
                     for i in self.agents:
                         i.Q = result

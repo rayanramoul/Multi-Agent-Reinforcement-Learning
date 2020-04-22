@@ -239,7 +239,7 @@ radius-hunters
 radius-hunters
 1
 10
-4.0
+2.0
 1
 1
 NIL
@@ -254,7 +254,7 @@ number-scouts
 number-scouts
 0
 10
-0.0
+1.0
 1
 1
 NIL
