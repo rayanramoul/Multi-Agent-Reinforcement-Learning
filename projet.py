@@ -12,15 +12,14 @@ def transform(state):
     except:
         return str(0)
     
-def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scout, radius):
-    print("\n\n")
+def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scout, radius, radius_scout):
     test = False
     for i in state_hunter:
         if 1 in i:
             test = True
     
     if test:
-        print("State hunter : "+str(state_hunter))
+        #print("State hunter : "+str(state_hunter))
         return state_hunter
     
     mid = int(len(state_scout)/2)
@@ -31,15 +30,23 @@ def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scou
     y_prey = -9999
     for i in state_scout:
         if 1 in i:
-            x_prey = i.index(1)+1 - int(radius/2)+1
-            y_prey = state_scout.index(i)+1 - int(radius/2)+1
-    #print("Scouuut")
-
-
+            '''
+            print("1 :("+str(i.index(1))+"/"+str(state_scout.index(i))+")")
+            print("Mid : "+str(int(radius_scout+1)))
+            print("Len : "+str(len(state_scout)))
+            '''
+            x_prey = i.index(1) - radius_scout+1
+            y_prey = radius_scout+1 - state_scout.index(i)
+    if x_prey == -9999:
+        return 0
+    '''
     print("X_hunter  : "+str(x_hunter))
     print("Y_hunter  : "+str(y_hunter))
     print("X_scout  : "+str(x_scout))
     print("Y_scout  : "+str(y_scout))
+    '''
+    x_prey_abs = (x_scout+x_prey)%10
+    y_prey_abs = (y_scout+y_prey)%10
     
     dx = 0
     dy = 0
@@ -47,21 +54,29 @@ def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scou
     if abs((x_hunter-x_scout))<abs((10-x_hunter+x_scout)):
         dx = x_scout - x_hunter
     else:
-        dx = 10-x_hunter+x_scout
+        dx = 10-x_hunter+x_prey_abs
     if abs((y_hunter-y_scout))<abs((10-y_hunter+y_scout)):
         dy = y_scout - y_hunter
     else:
         dy = 10-y_hunter+y_scout
     
     
-    dx_final = dx + x_prey
-    dy_final = dy + y_prey
+    if abs((x_hunter-x_prey_abs))<abs((10-x_hunter+x_prey_abs)):
+        dx_final = x_prey_abs - x_hunter
+    else:
+        dx_final = 10-x_hunter+x_prey_abs
+    if abs((y_hunter-y_prey_abs))<abs((10-y_hunter+y_prey_abs)):
+        dy_final = y_scout - y_hunter
+    else:
+        dy_final = 10-y_hunter+y_prey_abs
+    '''
     print("X HUNTER -> SCOUT = "+str(dx))
     print("Y HUNTER -> SCOUT = "+str(dy))
     print("X SCOUT -> PREY = "+str(x_prey))
     print("Y SCOUT -> PREY = "+str(y_prey))
     print("X HUNTER -> PREY = "+str(dx_final))
     print("Y HUNTER -> PREY =  "+str(dy_final))
+    '''
     return [dx_final, dy_final]
     
     
@@ -258,6 +273,9 @@ class RL:
         self.epsilon = epsilon
         self.decay_rate = decay_rate
         
+        self.mean = 0
+        self.mean50 = 0
+        
     def add_hunter(self, posx, posy):
         ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "hunter", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps, epsilon=self.epsilon, decay_rate=self.decay_rate)
         self.agents.append(ag)
@@ -309,7 +327,7 @@ class RL:
                 if self.scouts>0:
                     for j in self.agents:
                         if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
-                            state = get_the_state(state, self.get_state(j.posx, j.posy, scout=True), i.posx, j.posx, i.posy, j.posy, self.radius)
+                            state = get_the_state(state, self.get_state(j.posx, j.posy, scout=True), i.posx, j.posx, i.posy, j.posy, self.radius, self.radius_scout)
                             
                 choices.append(i.choose(state))
             else:
@@ -330,10 +348,16 @@ class RL:
                     result  = mean_tables(qss)
                     for i in self.agents:
                         i.Q = result
-                
+            self.mean = ((self.mean*(self.episode_number-1))+r)/self.episode_number
+            if self.episode_number%50==0:
+                self.mean50 = 0
+            else:
+                self.mean50 = ((self.mean50*(self.episode_number%50-1))+r)/(self.episode_number%50)
+            
             self.steps = 0
             return r
         self.steps += 1
+        
         return 0
         
     
@@ -375,7 +399,10 @@ class RL:
         ret += "Episode "+str(self.episode_number)+"\n"
         ret += "Sharing-Q-Table = "+str(self.sharing_q_table)+"\n"
         ret += "Mean-Frequency =  "+str(self.mean_frequency)+"\n"
-        ret += "Number to catch = "+str(self.number_to_catch)+"\n\n"
+        ret += "Number to catch = "+str(self.number_to_catch)+"\n"
+
+        ret += "Mean overall = " +str(self.mean)+"\n"
+        ret += "Mean on last 50 episodes  = "+str(self.mean50)+"\n\n"
 
         for i in self.agents:
             if i.type!="dead":
