@@ -12,12 +12,14 @@ def transform(state):
         return str(0)
     
 def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scout, radius):
+    print("\n\n")
     test = False
     for i in state_hunter:
         if 1 in i:
             test = True
     
     if test:
+        print("State hunter : "+str(state_hunter))
         return state_hunter
     
     mid = int(len(state_scout)/2)
@@ -31,6 +33,14 @@ def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scou
             x_prey = i.index(1)
             y_prey = state_scout.index(i)
     #print("Scouuut")
+    print("State scout :"+str([x_prey+x_rel, y_prey+y_rel]))
+    print("X_prey : "+str(x_prey))
+    print("Y_prey: "+str(y_prey))
+    print("X_hunter  : "+str(x_hunter))
+    print("Y_hunter  : "+str(y_hunter))
+    print("X_scout  : "+str(x_scout))
+    print("Y_scout  : "+str(y_scout))
+        
     return [x_prey+x_rel, y_prey+y_rel]
     
     
@@ -206,9 +216,10 @@ class Agent:
             else:
                 pass
 class RL:
-    def __init__(self, learning_rate, gamma, grid_width, grid_length, radius=4, world_wraps = False, sharing_q_table=False, mean_frequency=0, number_to_catch=1, epsilon=0, decay_rate=0):
+    def __init__(self, learning_rate, gamma, grid_width, grid_length, radius=4, radius_scout=2, world_wraps = False, sharing_q_table=False, mean_frequency=0, number_to_catch=1, epsilon=0, decay_rate=0):
         self.world_wraps = world_wraps
         self.radius = radius
+        self.radius_scout = radius_scout
         self.agents = []
         self.state_size = 50
         self.action_size = 4
@@ -250,12 +261,16 @@ class RL:
                 grid[i.posx, i.posy] = 1
         return grid
     
-    def get_state(self, posx, posy):
+    def get_state(self, posx, posy, scout=True):
         grid = self.get_grid()
         state = []
-        for x in range(posx-self.radius, posx+self.radius+1):
+        if scout:
+            rad = self.radius_scout
+        else:
+            rad = self.radius
+        for x in range(posx-rad, posx+rad+1):
             ranger = []
-            for y in range(posy-self.radius, posy+self.radius+1):
+            for y in range(posy-rad, posy+rad+1):
                 if not self.world_wraps:
                     if x>=0 and y>=0 and x<self.grid_width+1 and y<self.grid_length+1:
                         ranger.append(int(grid[x, y]))
@@ -273,7 +288,7 @@ class RL:
                 if self.scouts>0:
                     for j in self.agents:
                         if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
-                            state = get_the_state(state, self.get_state(j.posx, j.posy), i.posx, j.posx, i.posy, j.posy, self.radius)
+                            state = get_the_state(state, self.get_state(j.posx, j.posy, scout=True), i.posx, j.posx, i.posy, j.posy, self.radius)
                             
                 choices.append(i.choose(state))
             else:
