@@ -12,6 +12,7 @@ to setup
   py:setup py:python3
   py:run "from  projet import *"
   py:set "radius_hunter" radius-hunters
+   py:set "radius_scout" radius-scouts
   py:set "learning_rate" learning-rate
   py:set "gamma" gamma
   py:set "share_q_table" share-q-table
@@ -19,7 +20,7 @@ to setup
   py:set "number_to_catch" number-to-catch
   py:set "epsilon" epsilon
   py:set "decay_rate" decay-rate
-   py:run "rl = RL(learning_rate, gamma, 10, 10, radius=radius_hunter ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate)"
+   py:run "rl = RL(learning_rate, gamma, 10, 10, radius=radius_hunter, radius_scout=radius_scout ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate)"
 ;  py:run "rl = RL(1, 0.9, 10, 10, radius=radius_hunter ,world_wraps=True)"
 
   set-default-shape hunters "cat"
@@ -269,7 +270,7 @@ radius-scouts
 radius-scouts
 1
 10
-1.0
+2.0
 1
 1
 NIL

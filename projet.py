@@ -2,6 +2,7 @@ import numpy as np
 from collections import Counter
 import random
 
+
 def transform(state):
     return state
     state = np.array(state)
@@ -26,22 +27,42 @@ def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scou
     x_rel = x_hunter - (x_scout - radius)
     y_rel = y_hunter - (y_scout - radius)
     
-    x_prey = -1
-    y_prey = -1
+    x_prey = -9999
+    y_prey = -9999
     for i in state_scout:
         if 1 in i:
-            x_prey = i.index(1)
-            y_prey = state_scout.index(i)
+            x_prey = i.index(1)+1 - int(radius/2)+1
+            y_prey = state_scout.index(i)+1 - int(radius/2)+1
     #print("Scouuut")
-    print("State scout :"+str([x_prey+x_rel, y_prey+y_rel]))
-    print("X_prey : "+str(x_prey))
-    print("Y_prey: "+str(y_prey))
+
+
     print("X_hunter  : "+str(x_hunter))
     print("Y_hunter  : "+str(y_hunter))
     print("X_scout  : "+str(x_scout))
     print("Y_scout  : "+str(y_scout))
-        
-    return [x_prey+x_rel, y_prey+y_rel]
+    
+    dx = 0
+    dy = 0
+    
+    if abs((x_hunter-x_scout))<abs((10-x_hunter+x_scout)):
+        dx = x_scout - x_hunter
+    else:
+        dx = 10-x_hunter+x_scout
+    if abs((y_hunter-y_scout))<abs((10-y_hunter+y_scout)):
+        dy = y_scout - y_hunter
+    else:
+        dy = 10-y_hunter+y_scout
+    
+    
+    dx_final = dx + x_prey
+    dy_final = dy + y_prey
+    print("X HUNTER -> SCOUT = "+str(dx))
+    print("Y HUNTER -> SCOUT = "+str(dy))
+    print("X SCOUT -> PREY = "+str(x_prey))
+    print("Y SCOUT -> PREY = "+str(y_prey))
+    print("X HUNTER -> PREY = "+str(dx_final))
+    print("Y HUNTER -> PREY =  "+str(dy_final))
+    return [dx_final, dy_final]
     
     
 def mean_tables(tables):
