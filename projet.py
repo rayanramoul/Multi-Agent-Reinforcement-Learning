@@ -4,7 +4,6 @@ import random
 
 
 def transform(state):
-    return state
     state = np.array(state)
     x = np.argwhere(state>0)
     try:
@@ -54,7 +53,7 @@ def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scou
     if abs((x_hunter-x_scout))<abs((10-x_hunter+x_scout)):
         dx = x_scout - x_hunter
     else:
-        dx = 10-x_hunter+x_prey_abs
+        dx = 10-x_hunter+x_scout
     if abs((y_hunter-y_scout))<abs((10-y_hunter+y_scout)):
         dy = y_scout - y_hunter
     else:
@@ -79,6 +78,16 @@ def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scou
     '''
     return [dx_final, dy_final]
     
+def distance(x1, x2, y1, y2, size):
+    if abs((x1-x2))<abs((size-x1+x2)):
+            dx = x2 - x1
+    else:
+        dx = size-x1+x2
+    if abs((y1-y2))<abs((size-y1+y2)):
+        dy = y2 - y1
+    else:
+        dy = size-y1+y2
+    return [dx, dy]
     
 def mean_tables(tables):
     all_keys = []
@@ -252,10 +261,11 @@ class Agent:
             else:
                 pass
 class RL:
-    def __init__(self, learning_rate, gamma, grid_width, grid_length, radius=4, radius_scout=2, world_wraps = False, sharing_q_table=False, mean_frequency=0, number_to_catch=1, epsilon=0, decay_rate=0):
+    def __init__(self, learning_rate, gamma, grid_width, grid_length, radius=4, radius_scout=2, world_wraps = False, sharing_q_table=False, mean_frequency=0, number_to_catch=1, epsilon=0, decay_rate=0, communicating_hunters=False):
         self.world_wraps = world_wraps
         self.radius = radius
         self.radius_scout = radius_scout
+        self.communicating_hunters = communicating_hunters
         self.agents = []
         self.state_size = 50
         self.action_size = 4
@@ -321,17 +331,39 @@ class RL:
 
     def episode(self):
         choices = []
-        for i in self.agents:
-            if i.intelligent:
-                state = transform(self.get_state(i.posx, i.posy)) 
-                if self.scouts>0:
-                    for j in self.agents:
-                        if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
-                            state = get_the_state(state, self.get_state(j.posx, j.posy, scout=True), i.posx, j.posx, i.posy, j.posy, self.radius, self.radius_scout)
-                            
-                choices.append(i.choose(state))
-            else:
-                choices.append(i.choose())
+        if not self.communicating_hunters:
+            for i in self.agents:
+                
+                if i.intelligent:
+                    state = self.get_state(i.posx, i.posy)
+                    if self.scouts>0:
+                        for j in self.agents:
+                            if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
+                                state = get_the_state(state, self.get_state(j.posx, j.posy, scout=True), i.posx, j.posx, i.posy, j.posy, self.radius, self.radius_scout)
+                                
+                    choices.append(i.choose(state))
+                else:
+                    choices.append(i.choose())
+                    
+        
+        else:
+            states = {}
+            distances = {}
+            for i in self.agents:
+                if i.intelligent:
+                      states[str(self.agents.index(i))] = transform(self.get_state(i.posx, i.posy))
+                      distances[str(self.agents.index(i))] = []
+                      for j in self.agents:
+                          if j.intelligent and self.agents.index(j)!=self.agents.index(i):
+                              distances[str(self.agents.index(i))].append(distance(i.posx, j.posx, i.posy, j.posy,  self.grid_length)) 
+            for i in self.agents:
+                if i.intelligent:
+                    print("Global state :")
+                    print(str([list(states.values()), distances[str(self.agents.index(i))] ])+"\n")
+                    choices.append(i.choose(str([list(states.values()), distances[str(self.agents.index(i))] ])))
+                else:
+                    choices.append(i.choose())           
+               
         for i in self.agents:
             i.move(choices[self.agents.index(i)])
         for i in self.agents:

@@ -20,7 +20,8 @@ to setup
   py:set "number_to_catch" number-to-catch
   py:set "epsilon" epsilon
   py:set "decay_rate" decay-rate
-   py:run "rl = RL(learning_rate, gamma, 10, 10, radius=radius_hunter, radius_scout=radius_scout ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate)"
+    py:set "communicating_hunters" communicating-hunters
+   py:run "rl = RL(learning_rate, gamma, 10, 10, radius=radius_hunter, radius_scout=radius_scout ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate, communicating_hunters = communicating_hunters)"
 ;  py:run "rl = RL(1, 0.9, 10, 10, radius=radius_hunter ,world_wraps=True)"
 
   set-default-shape hunters "cat"
@@ -159,7 +160,7 @@ number-hunters
 number-hunters
 1
 10
-1.0
+2.0
 1
 1
 NIL
@@ -240,7 +241,7 @@ radius-hunters
 radius-hunters
 1
 10
-2.0
+4.0
 1
 1
 NIL
@@ -255,7 +256,7 @@ number-scouts
 number-scouts
 0
 10
-1.0
+0.0
 1
 1
 NIL
@@ -270,7 +271,7 @@ radius-scouts
 radius-scouts
 1
 10
-2.0
+4.0
 1
 1
 NIL
@@ -300,7 +301,7 @@ gamma
 gamma
 0
 1
-0.75
+0.9
 0.05
 1
 NIL
@@ -319,9 +320,9 @@ share-q-table
 
 BUTTON
 158
-359
+358
 274
-392
+391
 go-iteration
 go
 NIL
@@ -373,7 +374,7 @@ epsilon
 epsilon
 0
 1
-0.0
+0.004
 0.001
 1
 NIL
@@ -388,7 +389,7 @@ decay-rate
 decay-rate
 0
 1
-1.0E-5
+4.0E-5
 0.00001
 1
 NIL
@@ -484,6 +485,17 @@ NIL
 NIL
 NIL
 1
+
+SWITCH
+1131
+613
+1358
+646
+communicating-hunters
+communicating-hunters
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
