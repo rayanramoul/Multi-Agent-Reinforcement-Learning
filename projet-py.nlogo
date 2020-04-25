@@ -13,7 +13,7 @@ to setup
   py:run "from  projet import *"
   py:set "radius_hunter" radius-hunters
    py:set "radius_scout" radius-scouts
-  py:set "learning_rate" learning-rate
+  py:set "beta" beta
   py:set "gamma" gamma
   py:set "share_q_table" share-q-table
   py:set "mean_frequency" mean-frequency
@@ -21,7 +21,7 @@ to setup
   py:set "epsilon" epsilon
   py:set "decay_rate" decay-rate
     py:set "communicating_hunters" communicating-hunters
-   py:run "rl = RL(learning_rate, gamma, 10, 10, radius=radius_hunter, radius_scout=radius_scout ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate, communicating_hunters = communicating_hunters)"
+   py:run "rl = RL(beta, gamma, 11, 11, radius=radius_hunter, radius_scout=radius_scout ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate, communicating_hunters = communicating_hunters)"
 ;  py:run "rl = RL(1, 0.9, 10, 10, radius=radius_hunter ,world_wraps=True)"
 
   set-default-shape hunters "cat"
@@ -75,7 +75,7 @@ to setup
 end
 
 to go
-  let steps py:runresult "rl.episode()"
+  let steps py:runresult "rl.iteration()"
   ask turtles [
   py:set "id" who
     let x py:runresult "rl.agents[id].posx"
@@ -148,8 +148,8 @@ GRAPHICS-WINDOW
 1
 0
 10
+-10
 0
-10
 0
 0
 1
@@ -165,7 +165,7 @@ number-hunters
 number-hunters
 1
 10
-2.0
+1.0
 1
 1
 NIL
@@ -180,7 +180,7 @@ number-preys
 number-preys
 1
 10
-2.0
+1.0
 1
 1
 NIL
@@ -246,7 +246,7 @@ radius-hunters
 radius-hunters
 1
 10
-4.0
+2.0
 1
 1
 NIL
@@ -261,7 +261,7 @@ number-scouts
 number-scouts
 0
 10
-0.0
+1.0
 1
 1
 NIL
@@ -287,12 +287,12 @@ SLIDER
 149
 212
 182
-learning-rate
-learning-rate
-0.1
-10
+beta
+beta
+0.05
+1
 0.8
-0.1
+0.05
 1
 NIL
 HORIZONTAL
@@ -306,7 +306,7 @@ gamma
 gamma
 0
 1
-0.9
+0.75
 0.05
 1
 NIL
@@ -328,7 +328,7 @@ BUTTON
 358
 274
 391
-go-iteration
+1-iteration
 go
 NIL
 1
@@ -364,7 +364,7 @@ number-to-catch
 number-to-catch
 1
 20
-2.0
+1.0
 1
 1
 NIL
@@ -379,7 +379,7 @@ epsilon
 epsilon
 0
 1
-1.0
+0.0
 0.001
 1
 NIL
@@ -498,7 +498,7 @@ SWITCH
 646
 communicating-hunters
 communicating-hunters
-0
+1
 1
 -1000
 
