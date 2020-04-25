@@ -84,12 +84,14 @@ def distance(x1, x2, y1, y2, size):
     
 
 def dist_from_center(state, radius):
-    r = np.where(state == 1)
+     
+    r = np.where(np.array(state) > 0)
     print("state = "+str(state))
     print("r = " +str(r))
     try:
-        x_prey = r[0] - radius+1
-        y_prey = radius+1 - r[1]
+        x_prey = r[0] - radius
+        y_prey = radius - r[1]
+        print(" distance : "+str([x_prey, y_prey]))
         return [x_prey, y_prey]
     except:
         return 0
@@ -317,7 +319,7 @@ class RL:
                 grid[i.posx, i.posy] = 1
         return grid
     
-    def get_state(self, posx, posy, scout=True):
+    def get_state(self, posx, posy, scout=False):
         grid = self.get_grid()
         state = []
         if scout:
@@ -333,7 +335,6 @@ class RL:
                 else:
                     ranger.append(int(grid[x%(self.grid_width+1), y%(self.grid_length+1)]))
             state.append(ranger)
-        print("state initial : "+str(state))
         return state
 
     def episode(self):
@@ -366,7 +367,6 @@ class RL:
                               distances[str(self.agents.index(i))].append(distance(i.posx, j.posx, i.posy, j.posy,  self.grid_length)) 
             for i in self.agents:
                 if i.intelligent:
-                    print("Global state :")
                     print(str([list(states.values()), distances[str(self.agents.index(i))] ])+"\n")
                     choices.append(i.choose(str([list(states.values()), distances[str(self.agents.index(i))] ])))
                 else:
