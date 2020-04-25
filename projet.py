@@ -125,6 +125,8 @@ class Agent:
     
     def update_q_table(self, reward, action, state, new_state, Q=None):
         if self.type=="dead": return
+        state = str(state)
+        new_state = str(new_state)
         if Q!=None:
             self.Q = Q
         if str(state) in self.Q:
@@ -225,10 +227,8 @@ class RL:
 
     def get_grid(self):
         grid = np.zeros((self.grid_width, self.grid_length), dtype=np.uint64)
-        #print("shape  : "+str(grid.shape))
         for i in self.agents:
             if i.type == "prey":
-                #print("posx :"+str(i.posx)+" posy :"+str(i.posy)) 
                 grid[i.posy, i.posx] = 1
         self.grid = grid
     
@@ -249,15 +249,15 @@ class RL:
                     ranger.append(int(self.grid[y%self.grid_length, x%self.grid_width]))
             state.append(ranger)
         state = dist_from_center(np.array(state), self.radius)
-        print("state = "+str(state))
-        return str(state)
         if hunter and state == 0 and self.scouts>0:
-            print("Scouty")
             for j in self.agents:
                 if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
                     scout = self.get_state(j.posx, j.posy, hunter=False)
-                    return str([scout, absolute_distance(posx, j.posx, posy, j.posy, self.grid_length)])
-        
+                    ret = str([scout, absolute_distance(posx, j.posx, posy, j.posy, self.grid_length)])
+                    print("state with scout : "+str(ret))
+                    return ret
+        print("normal state = "+str(state))
+        return state
 
     def iteration(self):
         if not self.communicating_hunters:
