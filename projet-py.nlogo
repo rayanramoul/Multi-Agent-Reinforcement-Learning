@@ -32,7 +32,7 @@ to setup
   create-temporary-plot-pen ("Steps")
 
   ask patches [
-  set pcolor black
+  set pcolor 62
   ]
 
   create-hunters number-hunters
@@ -48,7 +48,7 @@ to setup
     py:set "ycor" ycor
     py:run "rl.add_hunter( xcor, ycor)"
     set size 1
-    set color red
+    set color black
   ]
 
   create-scouts number-scouts
@@ -59,7 +59,7 @@ to setup
     py:set "ycor" ycor
     py:run "rl.add_scout( xcor, ycor)"
     set size 1
-    set color green
+    set color 124
   create-links-to hunters
   ]
 
@@ -70,7 +70,7 @@ to setup
        py:set "ycor" ycor
     py:run "rl.add_prey( xcor, ycor)"
     set size 1
-    set color blue
+    set color grey
   ]
 end
 
@@ -122,6 +122,11 @@ to teach
       py:set "teacher" agent-teacher
     py:set "student" agent-student
   py:run "rl.teach(teacher, student)"
+end
+
+to print-q-table-states
+  py:set "agent_id" agent-id
+  py:run "rl.print_q(agent_id)"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -175,7 +180,7 @@ number-preys
 number-preys
 1
 10
-1.0
+2.0
 1
 1
 NIL
@@ -359,7 +364,7 @@ number-to-catch
 number-to-catch
 1
 20
-1.0
+2.0
 1
 1
 NIL
@@ -374,7 +379,7 @@ epsilon
 epsilon
 0
 1
-0.004
+1.0
 0.001
 1
 NIL
@@ -388,8 +393,8 @@ SLIDER
 decay-rate
 decay-rate
 0
-1
-4.0E-5
+0.001
+1.0E-5
 0.00001
 1
 NIL
@@ -493,9 +498,37 @@ SWITCH
 646
 communicating-hunters
 communicating-hunters
-1
+0
 1
 -1000
+
+BUTTON
+1465
+704
+1636
+737
+NIL
+print-q-table-states
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+INPUTBOX
+1470
+640
+1631
+700
+agent-id
+0.0
+1
+0
+Number
 
 @#$#@#$#@
 ## WHAT IS IT?

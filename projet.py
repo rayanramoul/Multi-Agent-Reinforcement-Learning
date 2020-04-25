@@ -3,23 +3,16 @@ from collections import Counter
 import random
 
 
-def transform(state):
-    state = np.array(state)
-    x = np.argwhere(state>0)
-    try:
-        return str(x[0][0])
-    except:
-        return str(0)
-    
+
 def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scout, radius, radius_scout):
     test = False
     for i in state_hunter:
         if 1 in i:
             test = True
-    
+
     if test:
         #print("State hunter : "+str(state_hunter))
-        return state_hunter
+        return transform(state_hunter)
     
     mid = int(len(state_scout)/2)
     x_rel = x_hunter - (x_scout - radius)
@@ -65,7 +58,7 @@ def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scou
     else:
         dx_final = 10-x_hunter+x_prey_abs
     if abs((y_hunter-y_prey_abs))<abs((10-y_hunter+y_prey_abs)):
-        dy_final = y_scout - y_hunter
+        dy_final = y_prey_abs - y_hunter
     else:
         dy_final = 10-y_hunter+y_prey_abs
     '''
@@ -89,6 +82,18 @@ def distance(x1, x2, y1, y2, size):
         dy = size-y1+y2
     return [dx, dy]
     
+
+def dist_from_center(state, radius):
+    r = np.where(state == 1)
+    print("state = "+str(state))
+    print("r = " +str(r))
+    try:
+        x_prey = r[0] - radius+1
+        y_prey = radius+1 - r[1]
+        return [x_prey, y_prey]
+    except:
+        return 0
+
 def mean_tables(tables):
     all_keys = []
     results  = {}
@@ -97,7 +102,7 @@ def mean_tables(tables):
     all_keys = list(set(all_keys))
     for i in all_keys:
         results[i] = {}
-        for j in ["up", "down", "left", "right"]:
+        for j in ["up", "down", "left", "right", "stay"]:
             summ = 0
             nbr = 0
             for k in tables:
@@ -111,7 +116,7 @@ def mean_tables(tables):
     return results
     
 class Agent:
-    def __init__(self, posx, posy, state_size, action_size, learning_rate, gamma, typer, grid_width, grid_length ,intelligent=False, world_wraps=False, epsilon=0, decay_rate=0):
+    def __init__(self, posx, posy, state_size, action_size, beta, gamma, typer, grid_width, grid_length ,intelligent=False, world_wraps=False, epsilon=0, decay_rate=0):
         self.Q = {}
         self.world_wraps = world_wraps
         self.posx = posx
@@ -122,7 +127,7 @@ class Agent:
         self.intelligent = intelligent
         self.steps = 0
         if self.intelligent:
-            self.lr = learning_rate
+            self.beta = beta
             self.gamma = gamma
             self.rewards = []
             self.actions = []
@@ -141,7 +146,7 @@ class Agent:
         ret += "( X="+str(self.posx)+" / Y="+str(self.posy)+" )"+"\n"
         ret += str(self.steps)+" steps."
         if self.intelligent:
-            ret += "Learning Rate = "+str(self.lr)+" / Gamma  = "+str(self.gamma)+" / Decay Rate = "+str(self.decay_rate)+"\n"
+            ret += "Beta = "+str(self.beta)+" / Gamma  = "+str(self.gamma)+" / Decay Rate = "+str(self.decay_rate)+"\n"
             ret += "History size = "+str(len(self.actions_history))+"\n"
         ret += "\n"
         
@@ -150,12 +155,13 @@ class Agent:
     def choose(self, state=None):
         if self.type=="dead": return
         self.steps += 1
+        #print("State : "+str(state))
         if not self.intelligent:
-            direction = random.choice(["up", "down", "left", "right", "nothing"])
+            direction = random.choice(["up", "down", "left", "right", "stay"])
             #self.move(direction)
             return direction
         if random.uniform(0, 1) < self.epsilon:
-            direction = random.choice(["up", "down", "left", "right"])
+            direction = random.choice(["up", "down", "left", "right", "stay"])
             #self.move(direction)
         else:
             if str(state) in self.Q:
@@ -167,6 +173,7 @@ class Agent:
                 self.Q[str(state)]['down'] = 0
                 self.Q[str(state)]['left'] = 0
                 self.Q[str(state)]['right'] = 0
+                self.Q[str(state)]['stay'] = 0
                 direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
                 #self.move(direction)
         if self.intelligent:  
@@ -198,15 +205,15 @@ class Agent:
             self.Q = Q
         for i in range(len(self.rewards)):
             if str(self.states[i]) in self.Q:
-                self.Q[str(self.states[i])][self.actions[i]] = self.Q[str(self.states[i])][self.actions[i]] + self.lr * (self.rewards[i] + self.gamma * self.optimal_future_value(i+1) - self.Q[str(self.states[i])][self.actions[i]])
+                self.Q[str(self.states[i])][self.actions[i]] = self.Q[str(self.states[i])][self.actions[i]] + self.beta * (self.rewards[i] + self.gamma * self.optimal_future_value(i+1) - self.Q[str(self.states[i])][self.actions[i]])
             else:
                 self.Q[str(self.states[i])] = {}
                 self.Q[str(self.states[i])]['up'] = 0
                 self.Q[str(self.states[i])]['down'] = 0
                 self.Q[str(self.states[i])]['left'] = 0
                 self.Q[str(self.states[i])]['right'] = 0
-                self.Q[str(self.states[i])]['nothing'] = 0
-                self.Q[str(self.states[i])][self.actions[i]] = self.Q[str(self.states[i])][self.actions[i]] + self.lr * (self.rewards[i] + self.gamma * self.optimal_future_value(i+1) - self.Q[str(self.states[i])][self.actions[i]])
+                self.Q[str(self.states[i])]['stay'] = 0
+                self.Q[str(self.states[i])][self.actions[i]] = self.Q[str(self.states[i])][self.actions[i]] + self.beta * (self.rewards[i] + self.gamma * self.optimal_future_value(i+1) - self.Q[str(self.states[i])][self.actions[i]])
         self.rewards_history.append(self.rewards)
         self.states_history.append(self.states)
         self.actions_history.append(self.actions)
@@ -261,7 +268,7 @@ class Agent:
             else:
                 pass
 class RL:
-    def __init__(self, learning_rate, gamma, grid_width, grid_length, radius=4, radius_scout=2, world_wraps = False, sharing_q_table=False, mean_frequency=0, number_to_catch=1, epsilon=0, decay_rate=0, communicating_hunters=False):
+    def __init__(self, beta, gamma, grid_width, grid_length, radius=4, radius_scout=2, world_wraps = False, sharing_q_table=False, mean_frequency=0, number_to_catch=1, epsilon=0, decay_rate=0, communicating_hunters=False):
         self.world_wraps = world_wraps
         self.radius = radius
         self.radius_scout = radius_scout
@@ -269,7 +276,7 @@ class RL:
         self.agents = []
         self.state_size = 50
         self.action_size = 4
-        self.learning_rate = learning_rate
+        self.beta = beta
         self.gamma = gamma
         self.grid_width = grid_width
         self.grid_length = grid_length
@@ -287,20 +294,20 @@ class RL:
         self.mean50 = 0
         
     def add_hunter(self, posx, posy):
-        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "hunter", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps, epsilon=self.epsilon, decay_rate=self.decay_rate)
+        ag = Agent(posx, posy, self.state_size, self.action_size, self.beta, self.gamma, "hunter", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps, epsilon=self.epsilon, decay_rate=self.decay_rate)
         self.agents.append(ag)
 
     def add_scout(self, posx, posy):
-        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "scout", self.grid_width, self.grid_length, intelligent=False, world_wraps=self.world_wraps)
+        ag = Agent(posx, posy, self.state_size, self.action_size, self.beta, self.gamma, "scout", self.grid_width, self.grid_length, intelligent=False, world_wraps=self.world_wraps)
         self.agents.append(ag)
         self.scouts += 1
         
     def add_expert_hunter(self, posx, posy):
-        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "expert", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps, epsilon=self.epsilon, decay_rate=self.decay_rate)
+        ag = Agent(posx, posy, self.state_size, self.action_size, self.beta, self.gamma, "expert", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps, epsilon=self.epsilon, decay_rate=self.decay_rate)
         self.agents.append(ag)
     
     def add_prey(self, posx, posy):
-        ag = Agent(posx, posy, self.state_size, self.action_size, self.learning_rate, self.gamma, "prey", self.grid_width, self.grid_length, world_wraps=self.world_wraps)
+        ag = Agent(posx, posy, self.state_size, self.action_size, self.beta, self.gamma, "prey", self.grid_width, self.grid_length, world_wraps=self.world_wraps)
         self.agents.append(ag)
         
     def get_grid(self):
@@ -326,7 +333,7 @@ class RL:
                 else:
                     ranger.append(int(grid[x%(self.grid_width+1), y%(self.grid_length+1)]))
             state.append(ranger)
-        #print("State : "+str(state))
+        print("state initial : "+str(state))
         return state
 
     def episode(self):
@@ -340,7 +347,8 @@ class RL:
                         for j in self.agents:
                             if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
                                 state = get_the_state(state, self.get_state(j.posx, j.posy, scout=True), i.posx, j.posx, i.posy, j.posy, self.radius, self.radius_scout)
-                                
+                    else:
+                        state =  dist_from_center(state, self.radius)
                     choices.append(i.choose(state))
                 else:
                     choices.append(i.choose())
@@ -351,7 +359,7 @@ class RL:
             distances = {}
             for i in self.agents:
                 if i.intelligent:
-                      states[str(self.agents.index(i))] = transform(self.get_state(i.posx, i.posy))
+                      states[str(self.agents.index(i))] = dist_from_center(self.get_state(i.posx, i.posy))
                       distances[str(self.agents.index(i))] = []
                       for j in self.agents:
                           if j.intelligent and self.agents.index(j)!=self.agents.index(i):
@@ -449,3 +457,10 @@ class RL:
     def teach(self, teacher, student):
         mem = self.agents[int(teacher)].get_memory()
         self.agents[int(student)].replay_memory(mem[0], mem[1], mem[2])
+        
+        
+    def print_q(self, ida):
+        lis = list(self.agents[ida].Q.keys())
+        print("\n\nKeys")
+        for i in lis:
+            print(str(i))
