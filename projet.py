@@ -3,65 +3,7 @@ from collections import Counter
 import random
 
 
-
-def get_the_state(state_hunter, state_scout, x_hunter, x_scout, y_hunter, y_scout, radius, radius_scout):
-    test = False
-    for i in state_hunter:
-        if 1 in i:
-            test = True
-
-    if test:
-        #print("State hunter : "+str(state_hunter))
-        state_hunter
-    
-    mid = int(len(state_scout)/2)
-    x_rel = x_hunter - (x_scout - radius)
-    y_rel = y_hunter - (y_scout - radius)
-    
-    x_prey = state_scout[0]
-    y_prey = state_scout[1]
-
-    '''
-    print("X_hunter  : "+str(x_hunter))
-    print("Y_hunter  : "+str(y_hunter))
-    print("X_scout  : "+str(x_scout))
-    print("Y_scout  : "+str(y_scout))
-    '''
-    x_prey_abs = (x_scout+x_prey)%10
-    y_prey_abs = (y_scout+y_prey)%10
-    
-    dx = 0
-    dy = 0
-    
-    if abs((x_hunter-x_scout))<abs((10-x_hunter+x_scout)):
-        dx = x_scout - x_hunter
-    else:
-        dx = 10-x_hunter+x_scout
-    if abs((y_hunter-y_scout))<abs((10-y_hunter+y_scout)):
-        dy = y_scout - y_hunter
-    else:
-        dy = 10-y_hunter+y_scout
-    
-    
-    if abs((x_hunter-x_prey_abs))<abs((10-x_hunter+x_prey_abs)):
-        dx_final = x_prey_abs - x_hunter
-    else:
-        dx_final = 10-x_hunter+x_prey_abs
-    if abs((y_hunter-y_prey_abs))<abs((10-y_hunter+y_prey_abs)):
-        dy_final = y_prey_abs - y_hunter
-    else:
-        dy_final = 10-y_hunter+y_prey_abs
-    '''
-    print("X HUNTER -> SCOUT = "+str(dx))
-    print("Y HUNTER -> SCOUT = "+str(dy))
-    print("X SCOUT -> PREY = "+str(x_prey))
-    print("Y SCOUT -> PREY = "+str(y_prey))
-    print("X HUNTER -> PREY = "+str(dx_final))
-    print("Y HUNTER -> PREY =  "+str(dy_final))
-    '''
-    return [dx_final, dy_final]
-    
-def distance(x1, x2, y1, y2, size):
+def absolute_distance(x1, x2, y1, y2, size):
     if abs((x1-x2))<abs((size-x1+x2)):
             dx = x2 - x1
     else:
@@ -74,17 +16,10 @@ def distance(x1, x2, y1, y2, size):
     
 
 def dist_from_center(state, radius):
-     
     r = np.where(np.array(state) > 0)
-    '''
-    print("state = ")
-    for i in state:
-        print(i)
-    print("r = " +str(r))
-    '''
     try:
-        x_prey = r[0] - radius
-        y_prey = radius - r[1]
+        x_prey = r[0][0] - radius
+        y_prey = radius - r[1][0]
         #print(" distance : "+str([x_prey, y_prey]))
         return [x_prey, y_prey]
     except:
@@ -295,7 +230,7 @@ class RL:
             if i.type == "prey":
                 #print("posx :"+str(i.posx)+" posy :"+str(i.posy)) 
                 grid[i.posy, i.posx] = 1
-        return grid
+        self.grid = grid
     
     def get_state(self, posx, posy, hunter=False):
         self.get_grid()
@@ -311,15 +246,18 @@ class RL:
                     if x>=0 and y>=0 and x<self.grid_width and y<self.grid_length:
                         ranger.append(int(self.grid[y, x]))
                 else:
-                    ranger.append(int(self.grid[y%(self.grid_length), x%(self.grid_width) ]  ))
+                    ranger.append(int(self.grid[y%self.grid_length, x%self.grid_width]))
             state.append(ranger)
-            state = dist_from_center(state, self.radius)
-        if hunter and len(state) != 0 and self.scouts>0:
+        state = dist_from_center(np.array(state), self.radius)
+        print("state = "+str(state))
+        return str(state)
+        if hunter and state == 0 and self.scouts>0:
             print("Scouty")
             for j in self.agents:
                 if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
-                    state = get_the_state(state, self.get_state(j.posx, j.posy, hunter=False), posx, posx, posy, j.posy, self.radius, self.radius_scout)
-        return str(state)
+                    scout = self.get_state(j.posx, j.posy, hunter=False)
+                    return str([scout, absolute_distance(posx, j.posx, posy, j.posy, self.grid_length)])
+        
 
     def iteration(self):
         if not self.communicating_hunters:
