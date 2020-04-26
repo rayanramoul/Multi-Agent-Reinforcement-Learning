@@ -60,9 +60,6 @@ class Agent:
         if self.intelligent:
             self.beta = beta
             self.gamma = gamma
-            self.rewards = []
-            self.actions = []
-            self.states = []
             self.epsilon = epsilon
             self.decay_rate = decay_rate
             
@@ -92,7 +89,7 @@ class Agent:
             direction = random.choice(["up", "down", "left", "right", "stay"])
         else:
             if str(state) in self.Q:
-                direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
+                direction = np.random.choice([key for key in self.Q[str(state)].keys() if self.Q[str(state)][key]==max(self.Q[str(state)].values())])
             else:
                 self.Q[str(state)] = {}
                 self.Q[str(state)]['up'] = 0
@@ -100,11 +97,8 @@ class Agent:
                 self.Q[str(state)]['left'] = 0
                 self.Q[str(state)]['right'] = 0
                 self.Q[str(state)]['stay'] = 0
-                direction = max(self.Q[str(state)], key=self.Q[str(state)].get) 
-        if self.intelligent:  
-            self.actions.append(direction)
-            self.states.append(state)
-
+                direction = np.random.choice([key for key in self.Q[str(state)].keys() if self.Q[str(state)][key]==max(self.Q[str(state)].values())])
+                
         return direction
     
     def place(self, x, y):
@@ -141,26 +135,21 @@ class Agent:
             self.Q[str(state)][action] = self.Q[state][action] + self.beta * (reward + self.gamma * self.optimal_value(new_state) - self.Q[str(state)][action])
         
         if self.save:
-            self.rewards_history.append(self.rewards)
-            self.states_history.append(self.states)
-            self.actions_history.append(self.actions)
+            self.rewards_history.append(reward)
+            self.actions_history.append(action)
+            self.states_history.append(state)
+            self.new_states_history.append(new_state)
+            
         
-        self.rewards = []
-        self.actions = []
-        self.states = []
         
-    def replay_memory(self, states, rewards, actions):
+    def replay_memory(self,  rewards, actions, states, new_states):
         if self.type=="dead": return
-
         for i in range(len(states)):
-            self.actions = actions[i]
-            self.states = states[i]
-            self.rewards = rewards[i]
-            self.update_q_table()
+            self.update_q_table(rewards[i], actions[i], states[i], new_states[i])
     
     def get_memory(self):
         if self.type=="dead": return
-        return [self.states_history, self.rewards_history, self.actions_history]
+        return [self.rewards_history, self.actions_history, self.states_history, self.new_states_history]
         
     def move(self, direction):
         if self.type=="dead": return
@@ -254,9 +243,9 @@ class RL:
                 if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
                     scout = self.get_state(j.posx, j.posy, hunter=False)
                     ret = str([scout, absolute_distance(posx, j.posx, posy, j.posy, self.grid_length)])
-                    print("state with scout : "+str(ret))
+                    #print("state with scout : "+str(ret))
                     return ret
-        print("normal state = "+str(state))
+        #print("normal state = "+str(state))
         return state
 
     def iteration(self):
@@ -277,18 +266,32 @@ class RL:
         else:
             states = {}
             distances = {}
-            for i in self.agents:
-                if i.intelligent:
-                      states[str(self.agents.index(i))] = dist_from_center(self.get_state(i.posx, i.posy))
-                      distances[str(self.agents.index(i))] = []
-                      for j in self.agents:
-                          if j.intelligent and self.agents.index(j)!=self.agents.index(i):
-                              distances[str(self.agents.index(i))].append(distance(i.posx, j.posx, i.posy, j.posy,  self.grid_length)) 
-            for i in self.agents:
-                if i.intelligent:
-                    choices.append(i.choose(str([list(states.values()), distances[str(self.agents.index(i))] ])))
+            for x in self.agents:
+                if x.intelligent:
+                    for i in self.agents:
+                        if i.intelligent:
+                            states[str(self.agents.index(i))] = dist_from_center(self.get_state(i.posx, i.posy), self.radius)
+                            distances[str(self.agents.index(i))] = []
+                            for j in self.agents:
+                                if j.intelligent and self.agents.index(j)!=self.agents.index(i):
+                                    distances[str(self.agents.index(i))].append(absolute_distance(i.posx, j.posx, i.posy, j.posy,  self.grid_length)) 
+            
+                
+                    state = str([list(states.values()), distances[str(self.agents.index(x))] ])
+                    action = x.choose(state)
+                    x.move(action)
+                    states[str(self.agents.index(x))] = dist_from_center(self.get_state(x.posx, x.posy), self.radius)
+                    for j in self.agents:
+                                if j.intelligent and self.agents.index(j)!=self.agents.index(x):
+                                    distances[str(self.agents.index(x))].append(absolute_distance(i.posx, j.posx, x.posy, x.posy,  self.grid_length)) 
+                    new_state =  str([list(states.values()), distances[str(self.agents.index(x))] ])
+                    if self.is_end_episode():
+                        reward = 1
+                    else:
+                        reward = -0.1
+                    x.update_q_table(reward, action, state, new_state)
                 else:
-                    i.move(i.choose())
+                    x.move(i.choose())
                
         if self.is_end_episode():
             self.episode_number += 1
@@ -366,7 +369,7 @@ class RL:
     
     def teach(self, teacher, student):
         mem = self.agents[int(teacher)].get_memory()
-        self.agents[int(student)].replay_memory(mem[0], mem[1], mem[2])
+        self.agents[int(student)].replay_memory(mem[0], mem[1], mem[2], mem[3])
         
         
     def print_q(self, ida):

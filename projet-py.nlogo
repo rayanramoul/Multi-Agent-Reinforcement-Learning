@@ -165,7 +165,7 @@ number-hunters
 number-hunters
 1
 10
-1.0
+2.0
 1
 1
 NIL
@@ -246,7 +246,7 @@ radius-hunters
 radius-hunters
 1
 10
-2.0
+4.0
 1
 1
 NIL
@@ -261,7 +261,7 @@ number-scouts
 number-scouts
 0
 10
-1.0
+0.0
 1
 1
 NIL
@@ -363,7 +363,7 @@ SLIDER
 number-to-catch
 number-to-catch
 1
-20
+2
 1.0
 1
 1
