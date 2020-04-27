@@ -57,6 +57,7 @@ class Agent:
         self.grid_length = grid_length
         self.intelligent = intelligent
         self.steps = 0
+        
         if self.intelligent:
             self.beta = beta
             self.gamma = gamma
@@ -66,7 +67,9 @@ class Agent:
             self.actions_history = []
             self.rewards_history = []
             self.states_history = []
+            self.new_states_history = []
             self.save = save
+            
     def pprint(self):
         if self.type=="dead": return ""
         ret = ""
@@ -98,7 +101,6 @@ class Agent:
                 self.Q[str(state)]['right'] = 0
                 self.Q[str(state)]['stay'] = 0
                 direction = np.random.choice([key for key in self.Q[str(state)].keys() if self.Q[str(state)][key]==max(self.Q[str(state)].values())])
-                
         return direction
     
     def place(self, x, y):
@@ -146,10 +148,16 @@ class Agent:
         if self.type=="dead": return
         for i in range(len(states)):
             self.update_q_table(rewards[i], actions[i], states[i], new_states[i])
-    
+
+        
     def get_memory(self):
         if self.type=="dead": return
-        return [self.rewards_history, self.actions_history, self.states_history, self.new_states_history]
+        l = [self.rewards_history, self.actions_history, self.states_history, self.new_states_history]
+        self.rewards_history = []
+        self.actions_history = []
+        self.states_history = []
+        self.new_states_history = []
+        return l
         
     def move(self, direction):
         if self.type=="dead": return
@@ -188,7 +196,7 @@ class Agent:
                 self.posx = 0
             
 class RL:
-    def __init__(self, beta, gamma, grid_width, grid_length, radius=4, radius_scout=2, world_wraps = False, sharing_q_table=False, mean_frequency=0, number_to_catch=1, epsilon=0, decay_rate=0, communicating_hunters=False):
+    def __init__(self, beta, gamma, grid_width, grid_length, radius=4, radius_scout=2, world_wraps = False, sharing_q_table=False, mean_frequency=0, number_to_catch=1, epsilon=0, decay_rate=0, communicating_hunters=False, teaching=False):
         self.world_wraps = world_wraps
         self.radius = radius
         self.radius_scout = radius_scout
@@ -213,7 +221,8 @@ class RL:
         self.mean = 0
         self.mean50 = 0
         self.end = False
-
+        self.teaching = teaching
+        
     def get_grid(self):
         grid = np.zeros((self.grid_width, self.grid_length), dtype=np.uint64)
         for i in self.agents:
@@ -249,24 +258,44 @@ class RL:
         return state
 
     def iteration(self):
+        end = False
+        #print("a")
         if not self.communicating_hunters:
-            for i in self.agents:   
+            for i in self.agents:
+                #print("b")   
                 if i.intelligent:
+                    #print("c")
                     state = self.get_state(i.posx, i.posy, hunter=True)
                     action = i.choose(state)
                     i.move(action)
                     new_state = self.get_state(i.posx, i.posy, hunter=True)
                     if self.is_end_episode():
+                        #print("d")
                         reward = 1
+                        end = True
                     else:
                         reward = -0.1
                     i.update_q_table(reward ,action, state, new_state)
+                    #print("e")
+                    if reward == 1 and self.teaching:
+                        #print("f")
+                        replay = i.get_memory()
+                        for j in self.agents:
+                            #print("g")
+                            if j.intelligent and self.agents.index(i)!=self.agents.index(j): 
+                                #print("h")   
+                                j.replay_memory(replay[0], replay[1], replay[2], replay[3])
+                                #print("i")
+                                
                 else:
-                    i.move(i.choose())    
+                    i.move(i.choose())
+                if end:
+                    break
         else:
             states = {}
             distances = {}
             for x in self.agents:
+                
                 if x.intelligent:
                     for i in self.agents:
                         if i.intelligent:
@@ -287,20 +316,24 @@ class RL:
                     new_state =  str([list(states.values()), distances[str(self.agents.index(x))] ])
                     if self.is_end_episode():
                         reward = 1
+                        end = True
                     else:
                         reward = -0.1
                     x.update_q_table(reward, action, state, new_state)
                 else:
                     x.move(i.choose())
-               
-        if self.is_end_episode():
+                if end:
+                    break
+        if end:
             self.episode_number += 1
 
             self.reinit()
             r = self.steps 
             if self.mean_frequency>0: # IF THERE IS A FREQUENCY OF SYNCHRONIZATION
                 if self.episode_number%self.mean_frequency == 0:
-                    qss = [] 
+                    qss = []
+                    for  i in self.agents:
+                        qss.append(i.Q)
                     result  = mean_tables(qss)
                     for i in self.agents:
                         i.Q = result
@@ -309,7 +342,6 @@ class RL:
                 self.mean50 = 0
             else:
                 self.mean50 = ((self.mean50*(self.episode_number%50-1))+r)/(self.episode_number%50)
-            
             self.steps = 0
             return r
         self.steps += 1
@@ -321,17 +353,40 @@ class RL:
         for i in self.agents:
             if i.type == "prey":
                 preys_coord.append((i.posx, i.posy))
-        count = 0
-        for i in self.agents:
-            if i.type == "hunter" and (i.posx, i.posy) in preys_coord:
-                count += 1
-        
-        if count>=self.number_to_catch:
-            self.end = True
-            return True
-        self.end = False
-        return False
-    
+        if self.number_to_catch<2:
+            count = 0
+            for i in self.agents:
+                if i.type == "hunter" and (i.posx, i.posy) in preys_coord:
+                    count += 1
+            
+            if count>=self.number_to_catch:
+                self.end = True
+                return True
+            self.end = False
+            return False
+        else:
+            
+            for i in preys_coord:
+                count = 0
+                be_in = []
+                be_in.append(((i[0]-1)%self.grid_length, (i[1]-1)%self.grid_length))
+                be_in.append(((i[0]-1)%self.grid_length, i[1]%self.grid_length))
+                be_in.append(((i[0]-1)%self.grid_length, (i[1]+1)%self.grid_length))
+                
+                be_in.append((i[0]%self.grid_length, (i[1]-1)%self.grid_length))
+                be_in.append((i[0]%self.grid_length, i[1]%self.grid_length))
+                be_in.append((i[0]%self.grid_length, (i[1]+1)%self.grid_length))
+                
+                be_in.append(((i[0]+1)%self.grid_length, (i[1]-1)%self.grid_length))
+                be_in.append(((i[0]+1)%self.grid_length, i[1]%self.grid_length))
+                be_in.append(((i[0]+1)%self.grid_length, (i[1]+1)%self.grid_length))
+                for i in self.agents:
+                    if i.intelligent and (i.posx, i.posy) in be_in:
+                        count += 1
+                if count >= 2:
+                    return True
+            return False
+         
     def reward(self, agent):
         preys_coord = []
         rew = -0.1
@@ -367,11 +422,6 @@ class RL:
     def delete_agent(self, index):
         self.agents[index].type = "dead"
     
-    def teach(self, teacher, student):
-        mem = self.agents[int(teacher)].get_memory()
-        self.agents[int(student)].replay_memory(mem[0], mem[1], mem[2], mem[3])
-        
-        
     def print_q(self, ida):
         lis = list(self.agents[ida].Q.keys())
         print("\n\nKeys")
@@ -379,7 +429,7 @@ class RL:
             print(str(i))
             
     def add_hunter(self, posx, posy):
-        ag = Agent(posx, posy, self.state_size, self.action_size, self.beta, self.gamma, "hunter", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps, epsilon=self.epsilon, decay_rate=self.decay_rate)
+        ag = Agent(posx, posy, self.state_size, self.action_size, self.beta, self.gamma, "hunter", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps, epsilon=self.epsilon, decay_rate=self.decay_rate, save=self.teaching)
         self.agents.append(ag)
 
     def add_scout(self, posx, posy):

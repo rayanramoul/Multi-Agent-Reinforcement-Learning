@@ -20,8 +20,9 @@ to setup
   py:set "number_to_catch" number-to-catch
   py:set "epsilon" epsilon
   py:set "decay_rate" decay-rate
+   py:set "teaching" teaching
     py:set "communicating_hunters" communicating-hunters
-   py:run "rl = RL(beta, gamma, 11, 11, radius=radius_hunter, radius_scout=radius_scout ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate, communicating_hunters = communicating_hunters)"
+   py:run "rl = RL(beta, gamma, 11, 11, radius=radius_hunter, radius_scout=radius_scout ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate, communicating_hunters = communicating_hunters, teaching=teaching)"
 ;  py:run "rl = RL(1, 0.9, 10, 10, radius=radius_hunter ,world_wraps=True)"
 
   set-default-shape hunters "cat"
@@ -82,9 +83,7 @@ to go
     let y py:runresult "rl.agents[id].posy"
     set xcor x
     set ycor y
-    let pprint py:runresult "rl.pprint()"
-    clear-output
-    output-print pprint
+
   ]
 
   if ( steps > 0 ) [
@@ -93,7 +92,11 @@ to go
   ]
 end
 
-
+to print-infos
+    let pprint py:runresult "rl.pprint()"
+    clear-output
+    output-print pprint
+end
 to add-hunter
 
     create-hunters 1
@@ -118,11 +121,7 @@ end
 
 
 
-to teach
-      py:set "teacher" agent-teacher
-    py:set "student" agent-student
-  py:run "rl.teach(teacher, student)"
-end
+
 
 to print-q-table-states
   py:set "agent_id" agent-id
@@ -246,7 +245,7 @@ radius-hunters
 radius-hunters
 1
 10
-4.0
+2.0
 1
 1
 NIL
@@ -276,7 +275,7 @@ radius-scouts
 radius-scouts
 1
 10
-4.0
+2.0
 1
 1
 NIL
@@ -400,96 +399,12 @@ decay-rate
 NIL
 HORIZONTAL
 
-INPUTBOX
-11
-685
-214
-745
-agent-teacher
-0
-1
-0
-String
-
-INPUTBOX
-241
-689
-440
-749
-agent-student
-2
-1
-0
-String
-
-BUTTON
-101
-765
-174
-798
-teach
-teach
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-493
-698
-605
-731
-NIL
-add-hunter
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
 OUTPUT
 1153
 29
 1709
 582
 12
-
-INPUTBOX
-764
-698
-1041
-758
-agent-id
-0.0
-1
-0
-Number
-
-BUTTON
-1079
-710
-1204
-743
-NIL
-delete-agent
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
 
 SWITCH
 1131
@@ -529,6 +444,34 @@ agent-id
 1
 0
 Number
+
+BUTTON
+1410
+603
+1514
+636
+NIL
+print-infos
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SWITCH
+23
+351
+143
+384
+teaching
+teaching
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
