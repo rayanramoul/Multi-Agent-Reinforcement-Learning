@@ -255,7 +255,7 @@ class RL:
         self.teaching = teaching
         
     def get_grid(self):
-        grid = np.zeros((self.grid_width, self.grid_length), dtype=np.uint64)
+        grid = np.zeros((self.grid_length, self.grid_width), dtype=np.uint64)
         for i in self.agents:
             if i.type == "prey":
                 if grid[i.posy, i.posx] ==2:
@@ -332,8 +332,8 @@ class RL:
                                 if j.intelligent and self.agents.index(j)!=self.agents.index(i):
                                     distances[str(self.agents.index(i))].append(absolute_distance(i.posx, j.posx, i.posy, j.posy,  self.grid_length)) 
                     
-                    state = str([states[str(self.agents.index(x))], distances[str(self.agents.index(x))] ])
-                    #state = str([list(states.values()), distances[str(self.agents.index(x))] ])
+                    #state = str([states[str(self.agents.index(x))], distances[str(self.agents.index(x))] ])
+                    state = str([list(states.values()), distances[str(self.agents.index(x))] ])
                     action = x.choose(state)
                     x.move(action)
                     states[str(self.agents.index(x))] = dist_from_center(self.get_state(x.posx, x.posy), self.radius)
@@ -372,7 +372,7 @@ class RL:
             self.steps = 0
             return r
         self.steps += 1
-        
+        print(self.grid)
         return 0
         
     def is_end_episode(self):
@@ -392,8 +392,9 @@ class RL:
             self.end = False
             return False
         else:
-            
             for i in preys_coord:
+                #print("Preys coords : "+str(i))
+                
                 count = 0
                 be_in = []
                 be_in.append(((i[0]-1)%self.grid_length, (i[1]-1)%self.grid_length))
@@ -407,10 +408,12 @@ class RL:
                 be_in.append(((i[0]+1)%self.grid_length, (i[1]-1)%self.grid_length))
                 be_in.append(((i[0]+1)%self.grid_length, i[1]%self.grid_length))
                 be_in.append(((i[0]+1)%self.grid_length, (i[1]+1)%self.grid_length))
-                for i in self.agents:
-                    if i.intelligent and (i.posx, i.posy) in be_in:
+                #print(str(be_in))
+                for j in self.agents:
+                    if j.intelligent and (j.posx, j.posy) in be_in:
                         count += 1
                 if count >= 2:
+                    
                     return True
             return False
          
@@ -426,6 +429,7 @@ class RL:
         agent.update_q_table()
 
     def reinit(self):
+        #print("reinit")
         for i in self.agents:
             i.place(np.random.randint(1, 10), np.random.randint(1, 10))
 
