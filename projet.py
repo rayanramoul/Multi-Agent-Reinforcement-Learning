@@ -17,7 +17,7 @@ def absolute_distance(x1, x2, y1, y2, size):
     
 
 def dist_from_center(state, radius):
-    r = np.where(np.array(state) == 1)
+    r = np.where(np.array(state) > 1)
     #print("state : \n"+str(state))
     #print("\nr : "+str(r))
     #print("r[0] : "+str(r[0]))
@@ -29,11 +29,11 @@ def dist_from_center(state, radius):
             y_prey = j[1] - radius
             lis.append(abs(x_prey)+abs(y_prey))
             real_lis.append([x_prey, y_prey])
-            #print("Final lis : "+str(real_lis))
+        #print("Final lis : "+str(real_lis))
         best = min(lis)
         best_value = real_lis[lis.index(best)]
         #print("And best value : "+str(best_value))
-        return best_value
+        return real_lis
     elif len(r[0])==1:
         #print("Only one : "+str([x_prey, y_prey]))
         x_prey = r[0][0] - radius
@@ -174,8 +174,7 @@ class Agent:
             self.states_history.append(state)
             self.new_states_history.append(new_state)
             
-        
-        
+
     def replay_memory(self,  rewards, actions, states, new_states):
         if self.type=="expert": return
         if self.type=="dead": return
@@ -261,15 +260,15 @@ class RL:
         grid = np.zeros((self.grid_length, self.grid_width), dtype=np.uint64)
         for i in self.agents:
             if i.type == "prey":
-                if grid[i.posy, i.posx] ==2:
-                    grid[i.posy, i.posx] = 3
-                else:
-                    grid[i.posy, i.posx] = 1
-            elif i.type == "hunter":
-                if grid[i.posy, i.posx]==1:
+                if grid[i.posy, i.posx] == 1:
                     grid[i.posy, i.posx] = 3
                 else:
                     grid[i.posy, i.posx] = 2
+            elif i.type == "hunter":
+                if grid[i.posy, i.posx]==2:
+                    grid[i.posy, i.posx] = 3
+                else:
+                    grid[i.posy, i.posx] = 1
         self.grid = grid
 
     
@@ -327,45 +326,70 @@ class RL:
             distances = {}
             for x in self.agents:
                 if x.intelligent:
+                    self.get_grid()
                     others_states = []
-                    #print("X : "+str(x.posx)+"/"+str(x.posy))
+                    
+                    #print("\n\ninitial grid")
+                    #print(str(self.grid))
+                    #print("\n\nX : "+str(x.posx)+"/"+str(x.posy))
+
                     for i in self.agents:
                         if i.intelligent and self.agents.index(x)!=self.agents.index(i):
                             v = self.get_state(i.posx, i.posy, hunter=True)
-                            print("i : "+str(i.posx)+"/"+str(i.posy))
+                            
+                            #print("i : "+str(i.posx)+"/"+str(i.posy))
+                            
                             others_states.append(v)
-                            #others_states.append(absolute_distance(x.posx, x.posy, i.posx, i.posy,  self.grid_length)) 
+                            others_states.append([x.posx-i.posx, x.posy-i.posy]) 
                     own_state = self.get_state(x.posx, x.posy, hunter=True)
+
                     final_state = own_state+others_states
-                    #final_state = own_state
-                    print("Own state : "+str(own_state))
-                    print("Final state : "+str(final_state))
+                    
+                    
+                    final_state = self.grid
+                    
+                    #print("Own state : "+str(own_state))
+                    #print("Final state : "+str(final_state))
+
                     action = x.choose(final_state)
+                    #print("Initial coordinate : "+str(x.posx)+"/"+str(x.posy))
                     x.move(action)
                     
+                    #print("Move with : "+str(action))
+                    self.get_grid()
                     others_states = []
+                    #print("\n\nnew grid")
+                    #print(str(self.grid))
+                    #print("NEW X : "+str(x.posx)+"/"+str(x.posy))
+                    
+
                     for i in self.agents:
                         if i.intelligent and self.agents.index(x)!=self.agents.index(i):
+                            
+                            #print("NEW i : "+str(i.posx)+"/"+str(i.posy))
+                            
                             v = self.get_state(i.posx, i.posy, hunter=True)
                             others_states.append(v)
-                            #others_states.append(absolute_distance(x.posx, x.posy, i.posx, i.posy,  self.grid_length)) 
+                            others_states.append([x.posx-i.posx, x.posy-i.posy]) 
                     
+
                     own_state = self.get_state(x.posx, x.posy, hunter=True)
                     new_state = own_state+others_states
-                    #new_state = own_state
+
                     if self.is_end_episode():
                         reward = 1
                         end = True
                     else:
                         reward = -0.1
-                    print("begin state: ")
-                    print(str(final_state))
-                    print("end state :")
-                    print(str(new_state))
+                    
+                    #print("begin state: ")
+                    #print(str(final_state))
+                    #print("end state :")
+                    #print(str(new_state))
                     x.update_q_table(reward, action, final_state, new_state)
+                    self.get_grid()
                 else:
-                    pass
-                    x.move(i.choose())
+                    x.move(x.choose())
                 if end:
                     break
         if end:
@@ -389,7 +413,6 @@ class RL:
             self.steps = 0
             return r
         self.steps += 1
-        #print(self.grid)
         return 0
         
     def is_end_episode(self):
@@ -409,18 +432,18 @@ class RL:
             self.end = False
             return False
         else:
+            #print("Preys coords : "+str(i))
             for i in preys_coord:
-                #print("Preys coords : "+str(i))
                 count = 0
                 be_in = []
                 be_in.append(((i[0]-1)%self.grid_length, (i[1]-1)%self.grid_length))
                 be_in.append(((i[0]-1)%self.grid_length, i[1]%self.grid_length))
                 be_in.append(((i[0]-1)%self.grid_length, (i[1]+1)%self.grid_length))
-                
+                    
                 be_in.append((i[0]%self.grid_length, (i[1]-1)%self.grid_length))
                 be_in.append((i[0]%self.grid_length, i[1]%self.grid_length))
                 be_in.append((i[0]%self.grid_length, (i[1]+1)%self.grid_length))
-                
+                    
                 be_in.append(((i[0]+1)%self.grid_length, (i[1]-1)%self.grid_length))
                 be_in.append(((i[0]+1)%self.grid_length, i[1]%self.grid_length))
                 be_in.append(((i[0]+1)%self.grid_length, (i[1]+1)%self.grid_length))
@@ -429,7 +452,6 @@ class RL:
                     if j.intelligent and (j.posx, j.posy) in be_in:
                         count += 1
                 if count >= 2:
-                    
                     return True
             
             

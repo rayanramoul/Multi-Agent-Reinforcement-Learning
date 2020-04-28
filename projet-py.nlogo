@@ -234,7 +234,7 @@ NIL
 PLOT
 16
 404
-529
+542
 671
 Steps by Episode
 NIL
@@ -302,7 +302,7 @@ beta
 beta
 0.05
 1
-0.9
+0.8
 0.05
 1
 NIL
@@ -317,7 +317,7 @@ gamma
 gamma
 0
 1
-0.75
+0.9
 0.05
 1
 NIL
@@ -375,7 +375,7 @@ number-to-catch
 number-to-catch
 1
 2
-1.0
+2.0
 1
 1
 NIL
