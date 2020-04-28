@@ -16,13 +16,29 @@ def absolute_distance(x1, x2, y1, y2, size):
     
 
 def dist_from_center(state, radius):
-    r = np.where(np.array(state) > 0)
-    try:
+    r = np.where(np.array(state) == 1)
+    #print("state : \n"+str(state))
+    #print("\nr : "+str(r))
+    #print("r[0] : "+str(r[0]))
+    if len(r[0])>1:
+        lis = []
+        real_lis = []
+        for j in r:    
+            x_prey = j[0] - radius
+            y_prey = j[1] - radius
+            lis.append(abs(x_prey)+abs(y_prey))
+            real_lis.append([x_prey, y_prey])
+            #print("Final lis : "+str(real_lis))
+        best = min(lis)
+        best_value = real_lis[lis.index(best)]
+        #print("And best value : "+str(best_value))
+        return best_value
+    elif len(r[0])==1:
+        #print("Only one : "+str([x_prey, y_prey]))
         x_prey = r[0][0] - radius
-        y_prey = radius - r[1][0]
-        #print(" distance : "+str([x_prey, y_prey]))
+        y_prey = r[1][0] - radius 
         return [x_prey, y_prey]
-    except:
+    else:
         return 0
 
 def mean_tables(tables):
@@ -57,7 +73,6 @@ class Agent:
         self.grid_length = grid_length
         self.intelligent = intelligent
         self.steps = 0
-        
         if self.intelligent:
             self.beta = beta
             self.gamma = gamma
@@ -84,6 +99,19 @@ class Agent:
 
     def choose(self, state=None):
         if self.type=="dead": return
+        if self.type=="expert":
+            if state==0:
+                return random.choice(["up", "down", "left", "right", "stay"])
+            if state[0]<0:
+                return "left"
+            elif state[0]>0:
+                return "right"
+            elif state[1]>0:
+                return "up"
+            elif state[1]<0:
+                return "down"
+            else:
+                return "stay"
         self.steps += 1
         if not self.intelligent:
             direction = random.choice(["up", "down", "left", "right", "stay"])
@@ -121,6 +149,7 @@ class Agent:
     
     def update_q_table(self, reward, action, state, new_state, Q=None):
         if self.type=="dead": return
+        if self.type=="expert": return
         state = str(state)
         new_state = str(new_state)
         if Q!=None:
@@ -145,12 +174,14 @@ class Agent:
         
         
     def replay_memory(self,  rewards, actions, states, new_states):
+        if self.type=="expert": return
         if self.type=="dead": return
         for i in range(len(states)):
             self.update_q_table(rewards[i], actions[i], states[i], new_states[i])
 
         
     def get_memory(self):
+        if self.type=="expert": return
         if self.type=="dead": return
         l = [self.rewards_history, self.actions_history, self.states_history, self.new_states_history]
         self.rewards_history = []
@@ -227,8 +258,17 @@ class RL:
         grid = np.zeros((self.grid_width, self.grid_length), dtype=np.uint64)
         for i in self.agents:
             if i.type == "prey":
-                grid[i.posy, i.posx] = 1
+                if grid[i.posy, i.posx] ==2:
+                    grid[i.posy, i.posx] = 3
+                else:
+                    grid[i.posy, i.posx] = 1
+            elif i.type == "hunter":
+                if grid[i.posy, i.posx]==1:
+                    grid[i.posy, i.posx] = 3
+                else:
+                    grid[i.posy, i.posx] = 2
         self.grid = grid
+
     
     def get_state(self, posx, posy, hunter=False):
         self.get_grid()
@@ -252,41 +292,29 @@ class RL:
                 if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
                     scout = self.get_state(j.posx, j.posy, hunter=False)
                     ret = str([scout, absolute_distance(posx, j.posx, posy, j.posy, self.grid_length)])
-                    #print("state with scout : "+str(ret))
                     return ret
-        #print("normal state = "+str(state))
         return state
 
     def iteration(self):
         end = False
-        #print("a")
         if not self.communicating_hunters:
             for i in self.agents:
-                #print("b")   
                 if i.intelligent:
-                    #print("c")
                     state = self.get_state(i.posx, i.posy, hunter=True)
                     action = i.choose(state)
                     i.move(action)
                     new_state = self.get_state(i.posx, i.posy, hunter=True)
                     if self.is_end_episode():
-                        #print("d")
                         reward = 1
                         end = True
                     else:
                         reward = -0.1
                     i.update_q_table(reward ,action, state, new_state)
-                    #print("e")
                     if reward == 1 and self.teaching:
-                        #print("f")
                         replay = i.get_memory()
                         for j in self.agents:
-                            #print("g")
-                            if j.intelligent and self.agents.index(i)!=self.agents.index(j): 
-                                #print("h")   
+                            if j.intelligent and self.agents.index(i)!=self.agents.index(j):  
                                 j.replay_memory(replay[0], replay[1], replay[2], replay[3])
-                                #print("i")
-                                
                 else:
                     i.move(i.choose())
                 if end:
@@ -294,8 +322,7 @@ class RL:
         else:
             states = {}
             distances = {}
-            for x in self.agents:
-                
+            for x in self.agents:    
                 if x.intelligent:
                     for i in self.agents:
                         if i.intelligent:
@@ -304,9 +331,9 @@ class RL:
                             for j in self.agents:
                                 if j.intelligent and self.agents.index(j)!=self.agents.index(i):
                                     distances[str(self.agents.index(i))].append(absolute_distance(i.posx, j.posx, i.posy, j.posy,  self.grid_length)) 
-            
-                
-                    state = str([list(states.values()), distances[str(self.agents.index(x))] ])
+                    
+                    state = str([states[str(self.agents.index(x))], distances[str(self.agents.index(x))] ])
+                    #state = str([list(states.values()), distances[str(self.agents.index(x))] ])
                     action = x.choose(state)
                     x.move(action)
                     states[str(self.agents.index(x))] = dist_from_center(self.get_state(x.posx, x.posy), self.radius)
@@ -356,7 +383,7 @@ class RL:
         if self.number_to_catch<2:
             count = 0
             for i in self.agents:
-                if i.type == "hunter" and (i.posx, i.posy) in preys_coord:
+                if (i.type == "hunter" or i.type=="expert") and (i.posx, i.posy) in preys_coord:
                     count += 1
             
             if count>=self.number_to_catch:
@@ -437,7 +464,7 @@ class RL:
         self.agents.append(ag)
         self.scouts += 1
         
-    def add_expert_hunter(self, posx, posy):
+    def add_expert(self, posx, posy):
         ag = Agent(posx, posy, self.state_size, self.action_size, self.beta, self.gamma, "expert", self.grid_width, self.grid_length, intelligent=True, world_wraps=self.world_wraps, epsilon=self.epsilon, decay_rate=self.decay_rate)
         self.agents.append(ag)
     

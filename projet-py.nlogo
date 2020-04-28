@@ -1,6 +1,7 @@
 extensions [matrix py qlearningextension]
 breed [hunters hunter]
 breed [preys prey]
+breed [experts expert]
 breed [scouts scout]
 breed [observators observator]
 observators-own [reward-list]
@@ -28,7 +29,7 @@ to setup
   set-default-shape hunters "cat"
   set-default-shape preys "mouse side"
   set-default-shape scouts "butterfly"
-
+  set-default-shape experts "dog"
   set-current-plot "Steps by Episode"
   create-temporary-plot-pen ("Steps")
 
@@ -68,10 +69,21 @@ to setup
   [
     set xcor random max-pxcor
     set ycor random max-pycor
+    py:set "xcor" xcor
        py:set "ycor" ycor
     py:run "rl.add_prey( xcor, ycor)"
     set size 1
     set color grey
+  ]
+    create-experts experts-number
+  [
+    set xcor random max-pxcor
+    set ycor random max-pycor
+    py:set "xcor" xcor
+       py:set "ycor" ycor
+    py:run "rl.add_expert( xcor, ycor)"
+    set size 1
+    set color blue
   ]
 end
 
@@ -129,10 +141,10 @@ to print-q-table-states
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-444
-10
-1103
-670
+559
+32
+1218
+692
 -1
 -1
 59.2
@@ -147,8 +159,8 @@ GRAPHICS-WINDOW
 1
 0
 10
--10
 0
+10
 0
 0
 1
@@ -162,9 +174,9 @@ SLIDER
 43
 number-hunters
 number-hunters
-1
+0
 10
-2.0
+1.0
 1
 1
 NIL
@@ -179,7 +191,7 @@ number-preys
 number-preys
 1
 10
-1.0
+2.0
 1
 1
 NIL
@@ -245,7 +257,7 @@ radius-hunters
 radius-hunters
 1
 10
-2.0
+4.0
 1
 1
 NIL
@@ -275,32 +287,32 @@ radius-scouts
 radius-scouts
 1
 10
-2.0
+1.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-3
-149
-212
-182
+7
+167
+185
+200
 beta
 beta
 0.05
 1
-0.8
+0.9
 0.05
 1
 NIL
 HORIZONTAL
 
 SLIDER
-225
-150
-397
-183
+217
+168
+389
+201
 gamma
 gamma
 0
@@ -312,10 +324,10 @@ NIL
 HORIZONTAL
 
 SWITCH
-206
-102
-360
-135
+142
+294
+296
+327
 share-q-table
 share-q-table
 1
@@ -340,10 +352,10 @@ NIL
 1
 
 SLIDER
-10
-204
-183
-237
+11
+208
+184
+241
 mean-frequency
 mean-frequency
 0
@@ -363,17 +375,17 @@ number-to-catch
 number-to-catch
 1
 2
-1.0
+2.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-18
-263
-423
-296
+13
+248
+184
+281
 epsilon
 epsilon
 0
@@ -385,32 +397,32 @@ NIL
 HORIZONTAL
 
 SLIDER
-18
-314
-423
-347
+217
+248
+394
+281
 decay-rate
 decay-rate
 0
 0.001
-1.0E-5
+0.0
 0.00001
 1
 NIL
 HORIZONTAL
 
 OUTPUT
-1153
+1305
 29
 1709
 582
 12
 
 SWITCH
-1131
-613
-1358
-646
+332
+296
+537
+329
 communicating-hunters
 communicating-hunters
 1
@@ -418,10 +430,10 @@ communicating-hunters
 -1000
 
 BUTTON
-1465
-704
-1636
-737
+1453
+661
+1624
+694
 NIL
 print-q-table-states
 NIL
@@ -435,10 +447,10 @@ NIL
 1
 
 INPUTBOX
-1470
-640
-1631
-700
+1257
+650
+1418
+710
 agent-id
 0.0
 1
@@ -463,15 +475,30 @@ NIL
 1
 
 SWITCH
-23
-351
-143
-384
+13
+292
+133
+325
 teaching
 teaching
-0
+1
 1
 -1000
+
+SLIDER
+202
+101
+374
+134
+experts-number
+experts-number
+0
+1
+0.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -617,6 +644,22 @@ cylinder
 false
 0
 Circle -7500403 true true 0 0 300
+
+dog
+false
+0
+Polygon -7500403 true true 300 165 300 195 270 210 183 204 180 240 165 270 165 300 120 300 0 240 45 165 75 90 75 45 105 15 135 45 165 45 180 15 225 15 255 30 225 30 210 60 225 90 225 105
+Polygon -16777216 true false 0 240 120 300 165 300 165 285 120 285 10 221
+Line -16777216 false 210 60 180 45
+Line -16777216 false 90 45 90 90
+Line -16777216 false 90 90 105 105
+Line -16777216 false 105 105 135 60
+Line -16777216 false 90 45 135 60
+Line -16777216 false 135 60 135 45
+Line -16777216 false 181 203 151 203
+Line -16777216 false 150 201 105 171
+Circle -16777216 true false 171 88 34
+Circle -16777216 false false 261 162 30
 
 dot
 false
