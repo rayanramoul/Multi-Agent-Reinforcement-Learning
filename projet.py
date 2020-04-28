@@ -4,6 +4,7 @@ import random
 
 
 def absolute_distance(x1, x2, y1, y2, size):
+    return [x2 - x1, y2 - y1]
     if abs((x1-x2))<abs((size-x1+x2)):
             dx = x2 - x1
     else:
@@ -39,7 +40,7 @@ def dist_from_center(state, radius):
         y_prey = r[1][0] - radius 
         return [x_prey, y_prey]
     else:
-        return 0
+        return [0]
 
 def mean_tables(tables):
     all_keys = []
@@ -148,8 +149,10 @@ class Agent:
 
     
     def update_q_table(self, reward, action, state, new_state, Q=None):
+        
         if self.type=="dead": return
         if self.type=="expert": return
+        #print("state :"+str(state))
         state = str(state)
         new_state = str(new_state)
         if Q!=None:
@@ -322,32 +325,46 @@ class RL:
         else:
             states = {}
             distances = {}
-            for x in self.agents:    
+            for x in self.agents:
                 if x.intelligent:
+                    others_states = []
+                    #print("X : "+str(x.posx)+"/"+str(x.posy))
                     for i in self.agents:
-                        if i.intelligent:
-                            states[str(self.agents.index(i))] = dist_from_center(self.get_state(i.posx, i.posy), self.radius)
-                            distances[str(self.agents.index(i))] = []
-                            for j in self.agents:
-                                if j.intelligent and self.agents.index(j)!=self.agents.index(i):
-                                    distances[str(self.agents.index(i))].append(absolute_distance(i.posx, j.posx, i.posy, j.posy,  self.grid_length)) 
-                    
-                    #state = str([states[str(self.agents.index(x))], distances[str(self.agents.index(x))] ])
-                    state = str([list(states.values()), distances[str(self.agents.index(x))] ])
-                    action = x.choose(state)
+                        if i.intelligent and self.agents.index(x)!=self.agents.index(i):
+                            v = self.get_state(i.posx, i.posy, hunter=True)
+                            print("i : "+str(i.posx)+"/"+str(i.posy))
+                            others_states.append(v)
+                            #others_states.append(absolute_distance(x.posx, x.posy, i.posx, i.posy,  self.grid_length)) 
+                    own_state = self.get_state(x.posx, x.posy, hunter=True)
+                    final_state = own_state+others_states
+                    #final_state = own_state
+                    print("Own state : "+str(own_state))
+                    print("Final state : "+str(final_state))
+                    action = x.choose(final_state)
                     x.move(action)
-                    states[str(self.agents.index(x))] = dist_from_center(self.get_state(x.posx, x.posy), self.radius)
-                    for j in self.agents:
-                                if j.intelligent and self.agents.index(j)!=self.agents.index(x):
-                                    distances[str(self.agents.index(x))].append(absolute_distance(i.posx, j.posx, x.posy, x.posy,  self.grid_length)) 
-                    new_state =  str([list(states.values()), distances[str(self.agents.index(x))] ])
+                    
+                    others_states = []
+                    for i in self.agents:
+                        if i.intelligent and self.agents.index(x)!=self.agents.index(i):
+                            v = self.get_state(i.posx, i.posy, hunter=True)
+                            others_states.append(v)
+                            #others_states.append(absolute_distance(x.posx, x.posy, i.posx, i.posy,  self.grid_length)) 
+                    
+                    own_state = self.get_state(x.posx, x.posy, hunter=True)
+                    new_state = own_state+others_states
+                    #new_state = own_state
                     if self.is_end_episode():
                         reward = 1
                         end = True
                     else:
                         reward = -0.1
-                    x.update_q_table(reward, action, state, new_state)
+                    print("begin state: ")
+                    print(str(final_state))
+                    print("end state :")
+                    print(str(new_state))
+                    x.update_q_table(reward, action, final_state, new_state)
                 else:
+                    pass
                     x.move(i.choose())
                 if end:
                     break
@@ -372,7 +389,7 @@ class RL:
             self.steps = 0
             return r
         self.steps += 1
-        print(self.grid)
+        #print(self.grid)
         return 0
         
     def is_end_episode(self):
@@ -394,7 +411,6 @@ class RL:
         else:
             for i in preys_coord:
                 #print("Preys coords : "+str(i))
-                
                 count = 0
                 be_in = []
                 be_in.append(((i[0]-1)%self.grid_length, (i[1]-1)%self.grid_length))
@@ -415,6 +431,8 @@ class RL:
                 if count >= 2:
                     
                     return True
+            
+            
             return False
          
     def reward(self, agent):

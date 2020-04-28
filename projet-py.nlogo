@@ -176,7 +176,7 @@ number-hunters
 number-hunters
 0
 10
-1.0
+2.0
 1
 1
 NIL
@@ -198,10 +198,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-280
-359
-353
-392
+398
+355
+471
+388
 setup
 setup
 NIL
@@ -215,10 +215,10 @@ NIL
 1
 
 BUTTON
-363
-358
-426
-391
+483
+355
+546
+388
 go
 go
 T
@@ -232,10 +232,10 @@ NIL
 1
 
 PLOT
-9
-405
-430
-672
+16
+404
+529
+671
 Steps by Episode
 NIL
 NIL
@@ -335,10 +335,10 @@ share-q-table
 -1000
 
 BUTTON
-158
-358
-274
+275
+353
 391
+386
 1-iteration
 go
 NIL
@@ -375,7 +375,7 @@ number-to-catch
 number-to-catch
 1
 2
-2.0
+1.0
 1
 1
 NIL
@@ -412,7 +412,7 @@ NIL
 HORIZONTAL
 
 OUTPUT
-1305
+1225
 29
 1709
 582
@@ -425,7 +425,7 @@ SWITCH
 329
 communicating-hunters
 communicating-hunters
-1
+0
 1
 -1000
 
@@ -499,6 +499,17 @@ experts-number
 1
 NIL
 HORIZONTAL
+
+SWITCH
+22
+349
+272
+382
+communicating-sensations
+communicating-sensations
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
