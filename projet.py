@@ -33,7 +33,7 @@ def dist_from_center(state, radius):
         best = min(lis)
         best_value = real_lis[lis.index(best)]
         #print("And best value : "+str(best_value))
-        return real_lis
+        return best_value
     elif len(r[0])==1:
         #print("Only one : "+str([x_prey, y_prey]))
         x_prey = r[0][0] - radius
@@ -255,6 +255,7 @@ class RL:
         self.mean50 = 0
         self.end = False
         self.teaching = teaching
+        self.winners = []
         
     def get_grid(self):
         grid = np.zeros((self.grid_length, self.grid_width), dtype=np.uint64)
@@ -298,6 +299,7 @@ class RL:
         return state
 
     def iteration(self):
+        self.winners = []
         end = False
         if not self.communicating_hunters:
             for i in self.agents:
@@ -323,75 +325,42 @@ class RL:
                     break
         else:
             states = {}
-            distances = {}
-            for x in self.agents:
-                if x.intelligent:
-                    self.get_grid()
-                    others_states = []
-                    
-                    #print("\n\ninitial grid")
-                    #print(str(self.grid))
-                    #print("\n\nX : "+str(x.posx)+"/"+str(x.posy))
-
-                    for i in self.agents:
-                        if i.intelligent and self.agents.index(x)!=self.agents.index(i):
-                            v = self.get_state(i.posx, i.posy, hunter=True)
-                            
-                            #print("i : "+str(i.posx)+"/"+str(i.posy))
-                            
-                            others_states.append(v)
-                            others_states.append([x.posx-i.posx, x.posy-i.posy]) 
-                    own_state = self.get_state(x.posx, x.posy, hunter=True)
-
-                    final_state = own_state+others_states
-                    
-                    
-                    final_state = self.grid
-                    
-                    #print("Own state : "+str(own_state))
-                    #print("Final state : "+str(final_state))
-
-                    action = x.choose(final_state)
-                    #print("Initial coordinate : "+str(x.posx)+"/"+str(x.posy))
-                    x.move(action)
-                    
-                    #print("Move with : "+str(action))
-                    self.get_grid()
-                    others_states = []
-                    #print("\n\nnew grid")
-                    #print(str(self.grid))
-                    #print("NEW X : "+str(x.posx)+"/"+str(x.posy))
-                    
-
-                    for i in self.agents:
-                        if i.intelligent and self.agents.index(x)!=self.agents.index(i):
-                            
-                            #print("NEW i : "+str(i.posx)+"/"+str(i.posy))
-                            
-                            v = self.get_state(i.posx, i.posy, hunter=True)
-                            others_states.append(v)
-                            others_states.append([x.posx-i.posx, x.posy-i.posy]) 
-                    
-
-                    own_state = self.get_state(x.posx, x.posy, hunter=True)
-                    new_state = own_state+others_states
-
+            actions = {}
+            new_states = {}
+            
+            for i in self.agents:
+                if i.intelligent:
+                    distances = []
+                    for j in self.agents:
+                        if j.intelligent and self.agents.index(j)!=self.agents.index(i):
+                            distances.append([i.posx-j.posx, i.posy-j.posy])
+                    state = [self.get_state(i.posx, i.posy, hunter=True), distances]
+                    states[str(self.agents.index(i))] = state
+                    #print("State : "+str(state))
+                    action = i.choose(state)
+                    actions[str(self.agents.index(i))] = action
+                    i.move(action)
+                    distances = []
+                    for j in self.agents:
+                        if j.intelligent and self.agents.index(j)!=self.agents.index(i):
+                                distances.append([i.posx-j.posx, i.posy-j.posy])
                     if self.is_end_episode():
-                        reward = 1
                         end = True
+                    new_state = [self.get_state(i.posx, i.posy, hunter=True), distances]
+                    new_states[str(self.agents.index(i))] = new_state
+                    #print("New State : "+str(new_state))
+                    
+            for i in self.agents:
+                if i.intelligent:
+                    if end:
+                        #print("rewarded")
+                        reward = 1
                     else:
                         reward = -0.1
-                    
-                    #print("begin state: ")
-                    #print(str(final_state))
-                    #print("end state :")
-                    #print(str(new_state))
-                    x.update_q_table(reward, action, final_state, new_state)
-                    self.get_grid()
+                    i.update_q_table(reward ,actions[str(self.agents.index(i))], states[str(self.agents.index(i))], new_states[str(self.agents.index(i))])
                 else:
-                    x.move(x.choose())
-                if end:
-                    break
+                    i.move(i.choose())
+
         if end:
             self.episode_number += 1
 
@@ -450,11 +419,12 @@ class RL:
                 #print(str(be_in))
                 for j in self.agents:
                     if j.intelligent and (j.posx, j.posy) in be_in:
+                        self.winners.append(self.agents.index(j))
                         count += 1
                 if count >= 2:
                     return True
             
-            
+            self.winners = []
             return False
          
     def reward(self, agent):
