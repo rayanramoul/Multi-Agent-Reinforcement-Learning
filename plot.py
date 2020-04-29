@@ -2,8 +2,8 @@ import matplotlib.pyplot as  plt
 import pandas as pd
 import numpy as np
 radius = pd.read_csv("Independant.csv")
-radius2 = pd.read_csv("Communicating.csv")
-#radius3 = pd.read_csv("1 hunter 1 scout radius 3.csv")
+radius2 = pd.read_csv("Passive.csv")
+radius3 = pd.read_csv("Communicating.csv")
 #radius4 = pd.read_csv("1 hunter 1 scout radius 4.csv")
 
 
@@ -31,7 +31,7 @@ for i in range(50):
     r = np.mean(lis2[   max(0,int(i*(len(lis2)/50))-25):min(len(lis2),int(i*(len(lis2)/50))+25)    ])
     y2.append(r)
 
-'''
+
 lis3 = radius3["y.1"].to_list()
 x3 = []
 y3 = []
@@ -39,7 +39,7 @@ for i in range(50):
     x3.append(int(i*(len(lis3)/50)))
     r = np.mean(lis3[   max(0,int(i*(len(lis3)/50))-25):min(len(lis3),int(i*(len(lis3)/50))+25)    ])
     y3.append(r)
-    
+'''   
 lis4 = radius4["y.1"].to_list()
 x4 = []
 y4 = []
@@ -53,14 +53,15 @@ for i in range(50):
 plt.plot(x, y, color=colors[0], marker="o", label="Independant")
 plt.legend()
 
-
+[4, 1, [3, 3]]
+[0, [0], [-4, 1]]
 plt.plot(x2, y2, color=colors[1], marker="o", label="Communicating")
 plt.legend()
 
-'''
-plt.plot(x3, y3, color=colors[2], marker="o", label="Scout Radius 3")
-plt.legend()
 
+plt.plot(x3, y3, color=colors[2], marker="o", label="Passive")
+plt.legend()
+'''
 plt.plot(x4, y4, color=colors[3], marker="o", label="Scout Radius 4")
 plt.legend()
 

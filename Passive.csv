@@ -1,22 +1,4 @@
-"export-plot data (NetLogo 6.1.1)"
-"projet-py.nlogo"
-"04/29/2020 01:34:41:175 +0200"
-
-"MODEL SETTINGS"
-"decay-rate","communicating-hunters","gamma","radius-hunters","beta","number-preys","share-q-table","number-scouts","number-to-catch","radius-scouts","communicating-sensations","teaching","agent-id","experts-number","number-hunters","epsilon","mean-frequency"
-"0","true","0.9","4","0.8","2","false","0","2","1","false","false","0","0","2","0","0"
-
-"""Steps by Episode"""
-"x min","x max","y min","y max","autoplot?","current pen","legend open?","number of pens"
-"0","21100","0","952","true","""0""","false","3"
-
-"pen name","pen down?","mode","interval","color","x"
-"""Steps""","true","0","1","0","0"
-"""1""","true","0","1","105","0"
-"""0""","true","0","1","105","20605"
-
-"""Steps""",,,,"""1""",,,,"""0"""
-"x","y","color","pen down?","x","y","color","pen down?","x","y","color","pen down?"
+"x","y","color","pen down?","x","y","color","pen down?"
 ,,,,,,,,"0","81","105","true"
 ,,,,,,,,"1","165","105","true"
 ,,,,,,,,"2","44","105","true"

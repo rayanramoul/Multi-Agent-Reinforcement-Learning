@@ -229,7 +229,7 @@ class Agent:
                 self.posx = 0
             
 class RL:
-    def __init__(self, beta, gamma, grid_width, grid_length, radius=4, radius_scout=2, world_wraps = False, sharing_q_table=False, mean_frequency=0, number_to_catch=1, epsilon=0, decay_rate=0, communicating_hunters=False, teaching=False):
+    def __init__(self, beta, gamma, grid_width, grid_length, radius=4, radius_scout=2, world_wraps = False, sharing_q_table=False, mean_frequency=0, number_to_catch=1, epsilon=0, decay_rate=0, communicating_hunters=False, teaching=False, passive=True):
         self.world_wraps = world_wraps
         self.radius = radius
         self.radius_scout = radius_scout
@@ -256,6 +256,7 @@ class RL:
         self.end = False
         self.teaching = teaching
         self.winners = []
+        self.passive = passive
         
     def get_grid(self):
         grid = np.zeros((self.grid_length, self.grid_width), dtype=np.uint64)
@@ -324,42 +325,93 @@ class RL:
                 if end:
                     break
         else:
-            states = {}
-            actions = {}
-            new_states = {}
-            
-            for i in self.agents:
-                if i.intelligent:
-                    distances = []
-                    for j in self.agents:
-                        if j.intelligent and self.agents.index(j)!=self.agents.index(i):
-                            distances.append([i.posx-j.posx, i.posy-j.posy])
-                    state = [self.get_state(i.posx, i.posy, hunter=True), distances]
-                    states[str(self.agents.index(i))] = state
-                    #print("State : "+str(state))
-                    action = i.choose(state)
-                    actions[str(self.agents.index(i))] = action
-                    i.move(action)
-                    distances = []
-                    for j in self.agents:
-                        if j.intelligent and self.agents.index(j)!=self.agents.index(i):
+            if self.passive:
+                states = {}
+                actions = {}
+                new_states = {}
+                
+                for i in self.agents:
+                    if i.intelligent:
+                        distances = []
+                        for j in self.agents:
+                            if j.intelligent and self.agents.index(j)!=self.agents.index(i):
                                 distances.append([i.posx-j.posx, i.posy-j.posy])
-                    if self.is_end_episode():
-                        end = True
-                    new_state = [self.get_state(i.posx, i.posy, hunter=True), distances]
-                    new_states[str(self.agents.index(i))] = new_state
-                    #print("New State : "+str(new_state))
-                    
-            for i in self.agents:
-                if i.intelligent:
-                    if end:
-                        #print("rewarded")
-                        reward = 1
+                        state = [self.get_state(i.posx, i.posy, hunter=True), distances]
+                        states[str(self.agents.index(i))] = state
+                        #print("State : "+str(state))
+                        action = i.choose(state)
+                        actions[str(self.agents.index(i))] = action
+                        i.move(action)
+                        distances = []
+                        for j in self.agents:
+                            if j.intelligent and self.agents.index(j)!=self.agents.index(i):
+                                    distances.append([i.posx-j.posx, i.posy-j.posy])
+                        if self.is_end_episode():
+                            end = True
+                        new_state = [self.get_state(i.posx, i.posy, hunter=True), distances]
+                        new_states[str(self.agents.index(i))] = new_state
+                        #print("New State : "+str(new_state))
+                        
+                for i in self.agents:
+                    if i.intelligent:
+                        if end:
+                            #print("rewarded")
+                            reward = 1
+                        else:
+                            reward = -0.1
+                        i.update_q_table(reward ,actions[str(self.agents.index(i))], states[str(self.agents.index(i))], new_states[str(self.agents.index(i))])
                     else:
-                        reward = -0.1
-                    i.update_q_table(reward ,actions[str(self.agents.index(i))], states[str(self.agents.index(i))], new_states[str(self.agents.index(i))])
-                else:
-                    i.move(i.choose())
+                        i.move(i.choose())
+            else:
+                states = {}
+                actions = {}
+                new_states = {}
+                
+                for i in self.agents:
+                    if i.intelligent:
+                        distances = []
+                        stats = []
+                        for j in self.agents:
+                            if j.intelligent and self.agents.index(j)!=self.agents.index(i):
+                                distances.append([i.posx-j.posx, i.posy-j.posy])
+                                stats.append(self.get_state(j.posx, j.posy, hunter=True))
+                        state = [self.get_state(i.posx, i.posy, hunter=True), stats ,distances]
+                        states[str(self.agents.index(i))] = state
+
+                        action = i.choose(state)
+                        actions[str(self.agents.index(i))] = action
+                        i.move(action)
+                        distances = []
+                        stats = []
+                        for j in self.agents:
+                            if j.intelligent and self.agents.index(j)!=self.agents.index(i):
+                                    distances.append([i.posx-j.posx, i.posy-j.posy])
+                                    stats.append(self.get_state(j.posx, j.posy, hunter=True))
+                        if self.is_end_episode():
+                            end = True
+                        new_state = [self.get_state(i.posx, i.posy, hunter=True), stats ,distances]
+                        new_states[str(self.agents.index(i))] = new_state
+
+                        
+                for i in self.agents:
+                    if i.intelligent:
+                        if end:
+                            #print("rewarded")
+                            reward = 1
+                        else:
+                            reward = -0.1
+                        i.update_q_table(reward ,actions[str(self.agents.index(i))], states[str(self.agents.index(i))], new_states[str(self.agents.index(i))])
+                    else:
+                        i.move(i.choose())
+
+
+
+
+
+
+
+
+
 
         if end:
             self.episode_number += 1

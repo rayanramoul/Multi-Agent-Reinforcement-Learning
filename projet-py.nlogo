@@ -22,8 +22,9 @@ to setup
   py:set "epsilon" epsilon
   py:set "decay_rate" decay-rate
    py:set "teaching" teaching
+  py:set "passive" passive
     py:set "communicating_hunters" communicating-hunters
-   py:run "rl = RL(beta, gamma, 11, 11, radius=radius_hunter, radius_scout=radius_scout ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate, communicating_hunters = communicating_hunters, teaching=teaching)"
+   py:run "rl = RL(beta, gamma, 11, 11, radius=radius_hunter, radius_scout=radius_scout ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate, communicating_hunters = communicating_hunters, teaching=teaching, passive=passive)"
 ;  py:run "rl = RL(1, 0.9, 10, 10, radius=radius_hunter ,world_wraps=True)"
 
   set-default-shape hunters "cat"
@@ -191,7 +192,7 @@ number-preys
 number-preys
 1
 10
-2.0
+1.0
 1
 1
 NIL
@@ -375,7 +376,7 @@ number-to-catch
 number-to-catch
 1
 2
-2.0
+1.0
 1
 1
 NIL
@@ -405,7 +406,7 @@ decay-rate
 decay-rate
 0
 0.001
-0.0
+3.0E-5
 0.00001
 1
 NIL
@@ -425,7 +426,7 @@ SWITCH
 329
 communicating-hunters
 communicating-hunters
-0
+1
 1
 -1000
 
@@ -505,8 +506,8 @@ SWITCH
 349
 272
 382
-communicating-sensations
-communicating-sensations
+passive
+passive
 1
 1
 -1000
