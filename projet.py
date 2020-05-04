@@ -3,7 +3,7 @@ from collections import Counter
 import random
 
 
-def absolute_distance(x1, x2, y1, y2, size): # Calculate the best distance between 2 points on the Grid
+def absolute_distance(x1, x2, y1, y2, size): # Calcule la meilleure distance globale sur les deux axes (x, y) sur le Grid entre deux points
     return [x2 - x1, y2 - y1]
     if abs((x1-x2))<abs((size-x1+x2)):
             dx = x2 - x1
@@ -16,7 +16,7 @@ def absolute_distance(x1, x2, y1, y2, size): # Calculate the best distance betwe
     return [dx, dy]
     
 
-def dist_from_center(state, radius): # From agent perception get distance to closest prey
+def dist_from_center(state, radius): # A partir de la perception d'un agent récupére la distance sur les  axes (x, y) vers la proie la plus proche
     r = np.where(np.array(state) > 1)
     if len(r[0])>1:
         lis = []
@@ -36,7 +36,7 @@ def dist_from_center(state, radius): # From agent perception get distance to clo
     else:
         return [0]
 
-def mean_tables(tables): # Calculate averaage of multiple Q-Tables 
+def mean_tables(tables): # Fonction permettant de moyenner les Q-Tables
     all_keys = []
     results  = {}
     for i in tables:
@@ -57,7 +57,7 @@ def mean_tables(tables): # Calculate averaage of multiple Q-Tables
             
     return results
     
-class Agent:
+class Agent: # Class d'agent récupérant l'ensemble des paramètres définis sur Netlogo
     def __init__(self, posx, posy, state_size, action_size, beta, gamma, typer, grid_width, grid_length ,intelligent=False, world_wraps=False, epsilon=0, decay_rate=0, save=False):
         self.Q = {}
         self.world_wraps = world_wraps
@@ -92,9 +92,9 @@ class Agent:
         ret += "\n"
         return ret
 
-    def choose(self, state=None): # Moving the agent
+    def choose(self, state=None): # Mouvement d'un agent
         if self.type=="dead": return
-        if self.type=="expert":
+        if self.type=="expert": # Si l'agent est  un expert un algorithme lui est dedié
             if state==0:
                 return random.choice(["up", "down", "left", "right", "stay"])
             if state[0]<0:
@@ -108,12 +108,12 @@ class Agent:
             else:
                 return "stay"
         self.steps += 1
-        if not self.intelligent:
+        if not self.intelligent: # Si  l'agent n'est pas intelligent ( proie ) effectuer un mouvement aléatoire
             direction = random.choice(["up", "down", "left", "right", "stay"])
             return direction
-        if random.uniform(0, 1) < self.epsilon:  # Exploration
+        if random.uniform(0, 1) < self.epsilon:  # Si le jet est inferieur à epsilon  on effectue  de l'Exploration
             direction = random.choice(["up", "down", "left", "right", "stay"])
-        else:      # Testing
+        else:      # Sinon on prend l'action ayant la meilleure Q-Value
             if str(state) in self.Q:
                 direction = np.random.choice([key for key in self.Q[str(state)].keys() if self.Q[str(state)][key]==max(self.Q[str(state)].values())])
             else:
@@ -126,7 +126,7 @@ class Agent:
                 direction = np.random.choice([key for key in self.Q[str(state)].keys() if self.Q[str(state)][key]==max(self.Q[str(state)].values())])
         return direction
     
-    def place(self, x, y): # Place the agent at a certain position
+    def place(self, x, y): # Place l'agent à une certaine position
         if self.type=="dead": return
         self.posx = x
         self.posy = y
@@ -134,7 +134,7 @@ class Agent:
             self.epsilon -= self.decay_rate
         self.steps = 0
         
-    def optimal_value(self, state): # Get optimal Q-Value for a state
+    def optimal_value(self, state): # Récupére la meilleure Q-Value d'un état 
         try:
             maximum = max(self.Q[state], key=self.Q[state].get)
             return (self.Q[state][maximum])
@@ -142,8 +142,7 @@ class Agent:
             return 0
 
     
-    def update_q_table(self, reward, action, state, new_state, Q=None): # Update the Q-Table with the Boltzman formula
-        if self.type=="dead": return
+    def update_q_table(self, reward, action, state, new_state, Q=None): # Mise à jour de la Q-Table en suivant l'equation décrit dans le rapport
         if self.type=="expert": return
         state = str(state)
         new_state = str(new_state)
@@ -167,14 +166,14 @@ class Agent:
             self.new_states_history.append(new_state)
             
 
-    def replay_memory(self,  rewards, actions, states, new_states): # Learn from another agent memory
+    def replay_memory(self,  rewards, actions, states, new_states): # Apprentissage depuis la mémoire d'un agent
         if self.type=="expert": return
         if self.type=="dead": return
         for i in range(len(states)):
             self.update_q_table(rewards[i], actions[i], states[i], new_states[i])
 
         
-    def get_memory(self):  #  Get memory of the agent for teaching
+    def get_memory(self):  #  Récupére la mémoire de  l'agent
         if self.type=="expert": return
         if self.type=="dead": return
         l = [self.rewards_history, self.actions_history, self.states_history, self.new_states_history]
@@ -198,15 +197,15 @@ class Agent:
             else:
                 pass
         else:
-            if direction == "up": #and self.posy<self.grid_length:
+            if direction == "up": 
                 self.posy += 1
-            elif direction == "down": #and self.posy>0:
+            elif direction == "down":
                 self.posy -= 1
                 
-            elif direction == "left": #and self.posx>0:
+            elif direction == "left":
                 self.posx -= 1
                 
-            elif direction == "right": #and self.posx<self.grid_width:
+            elif direction == "right":
                 self.posx += 1
                 
             else:
@@ -250,7 +249,7 @@ class RL:
         self.winners = []
         self.passive = passive
         
-    def get_grid(self): # Get grid representation of the entire environement
+    def get_grid(self): # Récupére une représentation sous forme de grille de l'environnement à cet instant
         grid = np.zeros((self.grid_length, self.grid_width), dtype=np.uint64)
         for i in self.agents:
             if i.type == "prey":
@@ -266,7 +265,7 @@ class RL:
         self.grid = grid
 
     
-    def get_state(self, posx, posy, hunter=False): # Get perception of the agent at position ...
+    def get_state(self, posx, posy, hunter=False): # Récupére la perception d'un agent à une position donnée
         self.get_grid()
         state = []
         if not hunter:
@@ -294,7 +293,7 @@ class RL:
     def iteration(self): # Function to use for each iteration
         self.winners = []
         end = False
-        if not self.communicating_hunters:   # Normal case ( no communication between agents )
+        if not self.communicating_hunters:   # Cas normal ( pas de  communication entre agents )
             for i in self.agents:
                 if i.intelligent:
                     state = self.get_state(i.posx, i.posy, hunter=True)
@@ -307,7 +306,7 @@ class RL:
                     else:
                         reward = -0.1
                     i.update_q_table(reward ,action, state, new_state)
-                    if reward == 1 and self.teaching:   # Saving history for teaching ( replay memory)
+                    if reward == 1 and self.teaching:   # Sauvegarde de l'historique pour le partage d'expériences
                         replay = i.get_memory()
                         for j in self.agents:
                             if j.intelligent and self.agents.index(i)!=self.agents.index(j):  
@@ -316,8 +315,8 @@ class RL:
                     i.move(i.choose())
                 if end:
                     break
-        else:       # Communicating agents
-            if self.passive: # Passively observing
+        else:       # Agents communiquant
+            if self.passive: # S'observant  passivement
                 states = {}
                 actions = {}
                 new_states = {}
@@ -327,7 +326,7 @@ class RL:
                         distances = []
                         for j in self.agents:
                             if j.intelligent and self.agents.index(j)!=self.agents.index(i):
-                                distances.append([i.posx-j.posx, i.posy-j.posy])        # Get distances from each other agent
+                                distances.append([i.posx-j.posx, i.posy-j.posy])        # Récupére les distances vers chaque agent
                         state = [self.get_state(i.posx, i.posy, hunter=True), distances]
                         states[str(self.agents.index(i))] = state
                         action = i.choose(state)
@@ -351,7 +350,7 @@ class RL:
                         i.update_q_table(reward ,actions[str(self.agents.index(i))], states[str(self.agents.index(i))], new_states[str(self.agents.index(i))])
                     else:
                         i.move(i.choose())
-            else:   # Actively sharing sensations
+            else:   # Partage actif des sensations
                 states = {}
                 actions = {}
                 new_states = {}
@@ -362,8 +361,8 @@ class RL:
                         stats = []
                         for j in self.agents:
                             if j.intelligent and self.agents.index(j)!=self.agents.index(i):
-                                distances.append([i.posx-j.posx, i.posy-j.posy])        # Adding distances  to each other agent
-                                stats.append(self.get_state(j.posx, j.posy, hunter=True))  # Adding their state too
+                                distances.append([i.posx-j.posx, i.posy-j.posy])        #  Ajout des distances vers les autres agents
+                                stats.append(self.get_state(j.posx, j.posy, hunter=True))  # Ajout des états des autres chasseurs
                         state = [self.get_state(i.posx, i.posy, hunter=True), stats ,distances]
                         states[str(self.agents.index(i))] = state
 
@@ -385,7 +384,6 @@ class RL:
                 for i in self.agents:
                     if i.intelligent:
                         if end:
-                            #print("rewarded")
                             reward = 1
                         else:
                             reward = -0.1
@@ -394,12 +392,12 @@ class RL:
                         i.move(i.choose())
 
 
-        if end:      # If the episode has ended we reinitialize
+        if end:      # Si l'episode est terminé, l'environnement est réinitalisé
             self.episode_number += 1
 
             self.reinit()
             r = self.steps 
-            if self.mean_frequency>0: # IF THERE IS A FREQUENCY OF SYNCHRONIZATION
+            if self.mean_frequency>0: # Si il y'a une fréquence de synchronisation  on moyenne les Q-Table
                 if self.episode_number%self.mean_frequency == 0:
                     qss = []
                     for  i in self.agents:
@@ -422,7 +420,7 @@ class RL:
         for i in self.agents:
             if i.type == "prey":
                 preys_coord.append((i.posx, i.posy))
-        if self.number_to_catch<2:  # Normal case
+        if self.number_to_catch<2:  #  Cas normal 
             count = 0
             for i in self.agents:
                 if (i.type == "hunter" or i.type=="expert") and (i.posx, i.posy) in preys_coord:
@@ -433,10 +431,10 @@ class RL:
                 return True
             self.end = False
             return False
-        else:       # Joint task case
+        else:       # Tache jointe
             for i in preys_coord:
                 count = 0
-                be_in = []  # Get all coordinates around the  prey's one
+                be_in = []  # Récupére l'ensemble des coordonnées dans un rayon de 1 de la proie
                 be_in.append(((i[0]-1)%self.grid_length, (i[1]-1)%self.grid_length))
                 be_in.append(((i[0]-1)%self.grid_length, i[1]%self.grid_length))
                 be_in.append(((i[0]-1)%self.grid_length, (i[1]+1)%self.grid_length))
@@ -448,7 +446,7 @@ class RL:
                 be_in.append(((i[0]+1)%self.grid_length, (i[1]-1)%self.grid_length))
                 be_in.append(((i[0]+1)%self.grid_length, i[1]%self.grid_length))
                 be_in.append(((i[0]+1)%self.grid_length, (i[1]+1)%self.grid_length))
-                for j in self.agents:   # If sufficient number of prey are in those cases return True
+                for j in self.agents:   # Si le nombre de chasseurs dans  cet entourage est suffisant on retourne vrai
                     if j.intelligent and (j.posx, j.posy) in be_in:
                         self.winners.append(self.agents.index(j))
                         count += 1
@@ -469,7 +467,7 @@ class RL:
         agent.rewards.append(rew)
         agent.update_q_table()
 
-    def reinit(self):   # Reinitialize positions of agents
+    def reinit(self):   # On reinitialise les positions des agents
         for i in self.agents:
             i.place(np.random.randint(1, 10), np.random.randint(1, 10))
 

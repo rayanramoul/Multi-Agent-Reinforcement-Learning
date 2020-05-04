@@ -10,6 +10,8 @@ hunters-own [reward-list]
 
 to setup
   clear-all
+
+  ; Mise en place de l'environnement python  et affectation de l'ensemble des paramètres de l'interface netlogo vers celui-ci.
   py:setup py:python3
   py:run "from  projet import *"
   py:set "radius_hunter" radius-hunters
@@ -25,8 +27,9 @@ to setup
   py:set "passive" passive
     py:set "communicating_hunters" communicating-hunters
    py:run "rl = RL(beta, gamma, 11, 11, radius=radius_hunter, radius_scout=radius_scout ,world_wraps=True, sharing_q_table=share_q_table, mean_frequency=mean_frequency, number_to_catch=number_to_catch, epsilon=epsilon, decay_rate=decay_rate, communicating_hunters = communicating_hunters, teaching=teaching, passive=passive)"
-;  py:run "rl = RL(1, 0.9, 10, 10, radius=radius_hunter ,world_wraps=True)"
 
+
+  ; Affectation des shapes à chaque breed existant
   set-default-shape hunters "cat"
   set-default-shape preys "mouse side"
   set-default-shape scouts "butterfly"
@@ -34,55 +37,61 @@ to setup
   set-current-plot "Steps by Episode"
   create-temporary-plot-pen ("Steps")
 
+
+  ; Couleur du fond
   ask patches [
   set pcolor 62
   ]
 
+
+  ; Creation du nombre choisi de chasseurs et initialisation du plot
   create-hunters number-hunters
   [
-
     set reward-list []
-
     create-temporary-plot-pen (word who)
     set-plot-pen-color blue
     set xcor random max-pxcor
     set ycor random max-pycor
     py:set "xcor" xcor
     py:set "ycor" ycor
-    py:run "rl.add_hunter( xcor, ycor)"
+    py:run "rl.add_hunter( xcor, ycor)"   ; Creation de l'equivalence au niveau de python
     set size 1
     set color black
   ]
 
+   ; Creation du nombre choisi d'eclaireurs
   create-scouts number-scouts
   [
   set xcor random max-pxcor
     set ycor random max-pycor
           py:set "xcor" xcor
     py:set "ycor" ycor
-    py:run "rl.add_scout( xcor, ycor)"
+    py:run "rl.add_scout( xcor, ycor)" ; Creation de l'equivalence au niveau de python
     set size 1
     set color 124
   create-links-to hunters
   ]
 
+   ; Creation du nombre choisi de proies
   create-preys number-preys
   [
     set xcor random max-pxcor
     set ycor random max-pycor
     py:set "xcor" xcor
        py:set "ycor" ycor
-    py:run "rl.add_prey( xcor, ycor)"
+    py:run "rl.add_prey( xcor, ycor)" ; Creation de l'equivalence au niveau de python
     set size 1
     set color grey
   ]
+
+   ; Creation du nombre choisi d'experts
     create-experts experts-number
   [
     set xcor random max-pxcor
     set ycor random max-pycor
     py:set "xcor" xcor
        py:set "ycor" ycor
-    py:run "rl.add_expert( xcor, ycor)"
+    py:run "rl.add_expert( xcor, ycor)" ; Creation de l'equivalence au niveau de python
     set size 1
     set color blue
   ]
@@ -105,16 +114,17 @@ to go
   ]
 end
 
+; Récupére les paramètres du systèmes, ainsi que des informations concernant chacun des agents et les affiche dans l'output
 to print-infos
     let pprint py:runresult "rl.pprint()"
     clear-output
     output-print pprint
 end
-to add-hunter
 
+; Fonction permettant l'ajout d'un chasseur
+to add-hunter
     create-hunters 1
   [
-
     set reward-list []
     set xcor random max-pxcor
     set ycor random max-pycor
@@ -126,16 +136,15 @@ to add-hunter
   ]
 end
 
+
+; Fonction permettant la suppression d'un agentt
 to delete-agent
     py:set "id" agent-id
   py:run "rl.delete_agent(id)"
   ask  turtle agent-id [ die ]
 end
 
-
-
-
-
+; Récupére depuis un ID la Q-Table de l'agent concerné et la print dans la console
 to print-q-table-states
   py:set "agent_id" agent-id
   py:run "rl.print_q(agent_id)"
@@ -361,7 +370,7 @@ mean-frequency
 mean-frequency
 0
 500
-0.0
+20.0
 10
 1
 NIL
@@ -513,41 +522,150 @@ passive
 -1000
 
 @#$#@#$#@
-## WHAT IS IT?
+## QUE FAIT LE MODELE ?
+Ce modèle  permet l'evaluation  d'agents basés sur l'apprentissage par renforcement dans un environnement de type chasseur et proie ( chat et souris ) et d'analyser la performance de méthodes de coopération et communication.
 
-(a general understanding of what the model is trying to show or explain)
+## COMMENT CELA FONCTIONNE ?
+Pour tester chaque scénario il faut désactiver l'ensemble des switchs  des autres scénarios,  exception faite du dernier ou le switch "passive" ne  fonctionne qu'en activant la communication.
+Les différents scénarios pertinent à essayer sont décrits plus bas dans la section dédiée.
 
-## HOW IT WORKS
+## ELEMENTS DE L'INTERFACE
+### number-hunters
+Nombre de chasseurs.
 
-(what rules the agents use to create the overall behavior of the model)
+### number-scouts
+Nombre d'éclaireurs.
 
-## HOW TO USE IT
+### number-preys
+Nombre de proies.
 
-(how to use the model, including a description of each of the items in the Interface tab)
+### radius-hunters
+Rayon de vision des chasseurs ( si il y'en a ).
 
-## THINGS TO NOTICE
+### radius-scouts
+Rayon de vision des éclaireurs ( si il y'en a ).
 
-(suggested things for the user to notice while running the model)
+### experts-number
+Nombre d'agents expert.
 
-## THINGS TO TRY
+### beta
+Valeur Beta de l'algorithme de mise à jour de Q-Table
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+### gamma
+Valeur Gamma de l'algorithme de mise à jour de Q-Table
 
-## EXTENDING THE MODEL
+### mean-frequency
+Fréquence de mise à jour des Q-Table des chasseurs.
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+### epsilon
+Valeur epsilon ( pourcentage d'actions aléatoires ) de l'algorithme.
 
-## NETLOGO FEATURES
+### decay-rate
+Valeur soustrait d'epsilon après chaque episode.
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+###  number-to-catch
+Nombre de chasseurs nécessaires pour attraper une proie, si elle est égale à 1 il faudra que le chasseur soit sur la même case que la proie,  si elle est égale à 2 il faudra qu'il y'ait 2 chasseurs dans un rayon de 1 autour d'une même proie.
 
-## RELATED MODELS
+### teaching
+Active l'échange  d'expériences réussis entre agents ( les autres switch doivent être désactivés ).
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+### share-q-table
+Active le partage de sorte que tous les  agents partagent la même Q-Table
+
+### communicating-hunters
+Active la communication et echange d'états entre les chasseurs 
+
+### passive
+Son activation dépend de communicating-hunters, activer passive permet de faire en sorte que l'environnement
+
+### 1-iteration
+Réalisee  une seule iteration de chaque décision d'agent.
+
+### setup
+Permet de mettre en place l'ensemble des hyperparamètres définis et créer l'environnement dédié.
+
+
+### go
+Lance la fonction bouclant à l'infini et réalisant des  épisodes successifs.
+
+### print-infos
+Permet d'obtenir des infos générales sur l'instance d'apprentissage  ainsi que sur chacun des agents et  leurs hyperparamètres.
+
+### print-q-tables
+Après avoir préciser l'id de l'agent  voulu on peut visualiser sa Q-Table.
+
+
+## SCENARIOS A ESSAYER
+Pour l'ensemble des scénarios qui vont suivre certains paramètres  sont fixes :
+Beta : 0.80
+Gamma :  0.90
+Epsilon : 0
+Decay Rate : 0
+
+### Agents ind́ependants
+Number Scouts : 0
+Number Experts : 0
+frequency : 0
+Desactiver l'ensemble des Switch
+Number-to-catch : 1
+Et tester plusieurs nombre de preys et hunters ainsi que différents radius pour le hunter.
+
+
+### Premier Scenario : Partage de sensation
+Number Scouts : 1
+Number Hunters : 1
+Number Experts : 0
+frequency : 0
+Desactiver l'ensemble des Switch
+Number-to-catch : 1
+Et tester plusieurs radius hunter et radius scout.
+
+
+### Second Sćenario : Partage de politique de choix ou d’́episodes
+#### Premier cas : Partage de Q-Table
+Number Scouts : 0
+Number Hunters : 2
+Number Experts : 0
+Desactiver l'ensemble des Switch sauf "share-q-table"
+Et tester plusieurs radius hunter.
+
+#### Deuxième cas : Synchronisation 
+Number Scouts : 0
+Number Hunters : 2
+Number Experts : 0
+Desactiver l'ensemble des Switch sauf "share-q-table"
+Tester plusieurs "number-preys" et  ajuster la frequency de 20 à plus.
+
+#### Troisième cas : Partage d’exṕeriences
+Numbe Scouts : 0
+Number Preys : 1 ou 2
+Deux initialisations sont alors intéréssantes :
+ - Number Hunters : 2 et Number Experts : 0
+ - Number Hunters : 1 et Number Experts : 1
+
+
+### Troisième Sćenario : Tâches jointes 
+Number-to-catch : 2
+Number-scouts : 0
+Number-experts : 0
+
+Ajuster : 
+Number-preys : 1 ou 2
+Communication : No 
+Passive : Yes ou No ( nécessite que la valeur de  communication soit Yes )
+
+## ASPECTS A OBSERVER
+Observer les comportements émergents et décrits dans le rapport comme la manière qu'auront deux agents communiquants à se diriger vers la même proie ( dans le contexte du scénario de Tâche Jointe ) malgrés que l'un d'eux soit plus proche d'une autre proie.
+
+
+## PERSPECTIVES
+Permettre de visualiser en temps avec une couleur différentes les souris qu'un chat cible à un instant, ainsi que surligner chaque fois le champ de vision de chaque chat.
+
+## FONCTIONNALITES NETLOGO SPECIALES
+Ce modèle nécessite le  fichier python obligatoire et qui contient la logique de l'apprentissage par renforcement afin de fonctionner, au niveau de Netlogo cela fait  appel à l'extension "py", coté  python il faut la librairie de calculs  matriciels "numpy" seulement, l'ensemble des fonctionnalités  y étant codé directement sans  se baser sur d'autres  librairies externes.
 
 ## CREDITS AND REFERENCES
-
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+Github : https://github.com/raysr/Multi-Agent-Reinforcement-Learning
 @#$#@#$#@
 default
 true
