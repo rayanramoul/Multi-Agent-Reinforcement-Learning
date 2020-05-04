@@ -1,4 +1,4 @@
-extensions [matrix py qlearningextension]
+extensions [py]
 breed [hunters hunter]
 breed [preys prey]
 breed [experts expert]
@@ -186,7 +186,7 @@ number-hunters
 number-hunters
 0
 10
-2.0
+1.0
 1
 1
 NIL
@@ -370,7 +370,7 @@ mean-frequency
 mean-frequency
 0
 500
-20.0
+0.0
 10
 1
 NIL
