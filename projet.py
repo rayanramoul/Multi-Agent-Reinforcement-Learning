@@ -282,7 +282,7 @@ class RL:
                     ranger.append(int(self.grid[y%self.grid_length, x%self.grid_width]))
             state.append(ranger)
         state = dist_from_center(np.array(state), self.radius)
-        if hunter and state == 0 and self.scouts>0:  # If there is a scout get best value between his perception and  the hunter perception
+        if hunter and state[0] == 0 and self.scouts>0:  # If there is a scout get best value between his perception and  the hunter perception
             for j in self.agents:
                 if j.type == "scout": # IF THERE IS A SCOUT ADD HIS PERCEPTION TO THE STATE
                     scout = self.get_state(j.posx, j.posy, hunter=False)
