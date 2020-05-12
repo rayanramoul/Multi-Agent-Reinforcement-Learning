@@ -6,8 +6,8 @@ Studying the impact of cooperation between agents in Reinforcement Learning
 
 
 ## Cooperation with Scout
-![](preview scout.gif)
+![](https://github.com/raysr/Multi-Agent-Reinforcement-Learning/blob/master/preview%20scout.gif)
 
 
 ## Cooperation on join task
-![](preview cooperation.gif)
+![](https://github.com/raysr/Multi-Agent-Reinforcement-Learning/blob/master/preview%20cooperation.gif)
